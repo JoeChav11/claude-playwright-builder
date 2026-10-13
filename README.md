@@ -12,11 +12,13 @@ Hands-on modules for using Claude Code to write, review and structure Playwright
 | 6. CI integration, guardrails, capstone | Run it in a pipeline and keep quality controlled | [docs/modules/module-6.md](docs/modules/module-6.md) |
 
 ## How to use this repo
-This repo is both the **reference result** and your **starting point**. The page objects, fixtures, test data, tests, `CLAUDE.md` and subagents are already here, and every exercise runs on top of them. You don't rebuild them. You use them, take them apart to see why they're built that way, and extend them: new tests, new page objects, new rules, a new agent. Each module explains its part of the repo.
+This repo is the **reference result**: what a finished project looks like. There are two ways to use it.
 
-Module 6 is the exception: the CI workflow, the deny rules and the "Fixing failing tests" section of `CLAUDE.md` are deliberately **not** in the repo. You build them from scratch.
+**1. Work on top of it.** Clone the whole repo. The page objects, fixtures, test data, tests, `CLAUDE.md` and subagents are already there, and every exercise runs on top of them: you use them, take them apart to see why they're built that way, and extend them. Each module explains its part of the repo. Module 6 is the exception: the CI workflow, the deny rules and the "Fixing failing tests" section of `CLAUDE.md` are deliberately **not** in the repo, and you build them yourself.
 
-The general use case is to begin with leanring how to interact with Claude Code.  Use Claude to build a similar repo to this one with the outlines listed above.  You can make it your own!  This is meant to be guide only!  Also keep in mind you can choose to allow Claude to build everything, or build along side the AI with writing manual tests to further your code writing skills.  Have fun with it!
+**2. Build your own from scratch.** Start an empty folder with only this `README.md` and `CLAUDE.md` (add `docs/` too if you want the full exercises), open it in Claude Code, and ask Claude to help you build the project. `CLAUDE.md` tells Claude to build it in six stages that follow the modules, to stop after each stage so you can run and commit it, and to ask first who writes the tests.
+
+The general use case is to begin with learning how to interact with Claude Code. Use Claude to build a similar repo to this one with the outlines listed above. You can make it your own! This is meant to be a guide only! Also keep in mind you can choose to allow Claude to build everything, or build alongside the AI with writing manual tests to further your code writing skills. Have fun with it!
 
 Because you extend the repo as you go, your copy will end up different from `main`. That's expected. Work on your own branch for each module, so your exercise changes stay separate from the reference:
 ```powershell
@@ -33,7 +35,7 @@ You will use Claude Code two ways:
 ```
 CLAUDE.md                  Standards Claude follows in this repo (read it!)
 .mcp.json                  Registers the Playwright MCP server
-.claude/agents/            test-writer and test-reviewer subagents     (Module 5)
+.claude/agents/            test-writer and test-reviewer subagents     (used from Module 2, explained in Module 5)
 .claude/settings.json      Enables the MCP server, pre-approved commands
 conftest.py                Registers fixtures/, sets data-test as the test-id attribute
 pytest.ini                 base_url, browser, markers (smoke, regression)
@@ -84,6 +86,8 @@ npx --version       # comes with Node
 If a command says "not recognized" or "not found", that tool isn't installed or isn't on your PATH. Reinstall it (for Python, with "Add to PATH" ticked) and reopen the terminal.
 
 ### Install the project
+> Building from scratch (option 2 above)? Skip this section. Claude sets the project up with you in stage 1.
+
 Clone the repo (`git clone <repo-url>`), open the folder in VS Code (**File > Open Folder**), then open a terminal (**Terminal > New Terminal**) and run:
 
 ```powershell

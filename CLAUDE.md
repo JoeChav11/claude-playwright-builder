@@ -3,11 +3,27 @@
 End-to-end tests for https://www.saucedemo.com, written in Playwright **Python** with pytest. Follow this file exactly; consistency matters more than cleverness.
 
 ## About this repo
-This is the **reference result and starting point** of a six-module training course on Claude Code + Playwright (`docs/modules/module-1.md` to `module-6.md`; index in `README.md`). Students clone it and work through the modules in order, one git branch per module. The exercises use, inspect and extend what is already here; only the Module 6 pieces are built from scratch. Students' branches are expected to drift from `main`.
+This is the **reference result and starting point** of a six-module training course on Claude Code + Playwright (`docs/modules/module-1.md` to `module-6.md`; index in `README.md`). Students clone it and work through the modules in order, one git branch per module. The exercises use, inspect and extend what is already here; only the Module 6 pieces are built from scratch. Students' branches are expected to drift from `main`. **If `pages/` and `tests/` don't exist, skip to "Building from scratch" below.**
 - Everything here is teaching material: keep it exemplary, consistent with the module docs, and commented where a comment teaches something.
 - **Deliberately absent** (students build them in Module 6): `.github/workflows/`, `deny` rules in `.claude/settings.json`, and a "Fixing failing tests" section in this file. Don't add them unless asked.
 - When you change course material, keep the module docs, `README.md` and this file in sync. Exercises quote file paths, test counts (23) and commands; update them if those change.
-- When a student is working through a module, help them do the exercise themselves on their branch, rather than copying a finished answer.
+- When a student is working through a module of the cloned repo, help them do the exercise themselves on their branch, rather than copying a finished answer.
+
+## Building from scratch
+**Applies when `pages/` and `tests/` don't exist**: a student has started an empty folder with this file and `README.md` and wants to build the project. Then:
+- Everything in this file that says files "already exist" (the layout, "Reuse existing...", "23 tests") describes the **target**, not the current state. The rules below "Commands" are the standard for the code you write.
+- **First, ask who writes the tests:** Claude writes them and the student reviews, or the student writes them and Claude reviews. Don't write code until they answer (skip the question if their message already says). Then follow their choice for the rest of the build.
+- **Build one stage at a time, in order.** Plan only the current stage, in plan mode, listing every file. After it's built and its check passes, **stop**: ask the student to run the check, commit it (stage 1 on `main`, then a branch per stage: `git switch -c module-N`), and say when to start the next stage. Never plan or build two stages at once, even if asked to "build everything": explain why, and offer to go stage by stage quickly.
+- If `docs/modules/module-N.md` exists, follow it for that stage. If not, use the list below.
+
+| Stage (module) | Builds | Check |
+|---|---|---|
+| 1. Setup (Module 1) | `git init`, `.gitignore`, `requirements.txt` (pytest, pytest-playwright, pytest-xdist, pytest-repeat), `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`; Windows: `"command": "cmd", "args": ["/c", "npx", "-y", ...]`, macOS/Linux: `"command": "npx"`), `.claude/settings.json` (`"enabledMcpjsonServers": ["playwright"]`, allow `pytest`). Then: venv, `pip install -r requirements.txt`, `playwright install chromium`. `conftest.py` registers `fixtures/` only from stage 2, once it exists. | `pytest` runs without errors ("no tests ran" is expected); after reloading Claude Code, `/mcp` shows `playwright` connected |
+| 2. First tests (Module 2) | `tests/test_reference.py`: 3 annotated beginner tests (login, locked-out error, add to cart) with inline locators. `fixtures/auth.py` with `logged_in_page`, registered in `conftest.py`. Empty `tests/codegen/` and `tests/claude/` folders (with a README) for recorded and Claude-written tests. `exercises/bad_test.py`: a checkout test that passes but uses sleeps, XPath, styling classes and `assert ... is_visible()` | `pytest tests/test_reference.py` passes, and so does `pytest exercises/bad_test.py` (that's the point) |
+| 3. Structure (Module 3) | `data/*.json` + `data/__init__.py` (`USERS`, `PRODUCTS`, `CUSTOMERS`, `money()`); page objects for login, inventory, cart, checkout info / overview / complete; `Header` and `ProductCard` components; `fixtures/pages.py`; smoke tests (login, cart, checkout) and regression tests (cart, checkout, login errors, logout, sorting). Locators from MCP snapshots. | `pytest -n auto` passes |
+| 4. MCP-driven tests (Module 4) | One new feature tested from a description only, explored with MCP first (e.g. "Reset App State" in the menu clears the cart) | New test passes `--count 10 -n auto` |
+| 5. Subagents (Module 5) | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash` only; never edits) | In a new session, the reviewer rejects `exercises/bad_test.py` and accepts a smoke test |
+| 6. CI and guardrails (Module 6) | The student builds these: `.github/workflows/`, `deny` rules, a "Fixing failing tests" section here. Guide, don't write them. | The workflow runs on a PR |
 
 ## Commands
 Activate the venv first: `.\.venv\Scripts\Activate.ps1` (macOS/Linux: `source .venv/bin/activate`).

@@ -8,12 +8,20 @@ pytestmark = pytest.mark.regression
 
 ALL = list(PRODUCTS.values())
 
+# The expected order is written out, not computed with sorted(). Python sorts by
+# character code, the site sorts in the browser's locale order; they only agree on
+# these names by chance. A test that re-implements the feature can share its bugs.
+A_TO_Z = [
+    PRODUCTS[key]["name"]
+    for key in ["backpack", "bike_light", "bolt_tshirt", "fleece_jacket", "onesie", "red_tshirt"]
+]
+
 
 @pytest.mark.parametrize(
     ("option", "expected_names"),
     [
-        pytest.param("Name (A to Z)", sorted(p["name"] for p in ALL), id="a-to-z"),
-        pytest.param("Name (Z to A)", sorted((p["name"] for p in ALL), reverse=True), id="z-to-a"),
+        pytest.param("Name (A to Z)", A_TO_Z, id="a-to-z"),
+        pytest.param("Name (Z to A)", A_TO_Z[::-1], id="z-to-a"),
     ],
 )
 def test_name_sort_orders_products_by_name(inventory_page: InventoryPage, option, expected_names):

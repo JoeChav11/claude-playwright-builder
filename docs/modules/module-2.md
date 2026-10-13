@@ -79,7 +79,7 @@ Use the test-writer agent: write a playwright test for checkout on saucedemo
 ```
 Did it stop and ask what proves success, or did it assume? (Its instructions say to ask. Check that it does.)
 
-> Note: this repo's `CLAUDE.md` and page objects are already in place, so Claude will probably use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. That's expected: compare against codegen either way. Module 3 looks at the structure it used, and Module 3, Exercise 3 shows how much of this comes from `CLAUDE.md`.
+> **This isn't a fair fight, and that's the lesson.** Codegen sees only the clicks you made. The test-writer sees the whole repo: `CLAUDE.md`, the page objects, the fixtures and `data/`. So you're not comparing "codegen vs. Claude"; you're comparing **a recorder vs. Claude working inside a repo with standards**. Expect Claude's test to use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. What Claude knows about your repo is most of what makes its output good. Module 3 looks at that structure, and Module 3, Exercise 3 measures how much of it comes from `CLAUDE.md`.
 
 ## Exercise 5: Review, don't accept (15 min)
 1. Read `exercises/bad_test.py` yourself first. Find as many problems as you can using the [review checklist](../review-checklist.md).
@@ -99,8 +99,11 @@ That runs the test once per user; `pytest tests/claude -v` shows one result for 
 - Now `exercises/bad_test.py`: it logs in by typing a username, so change `"standard_user"` to `"problem_user"` in it and run it. Does it fail? If a test can't catch a real bug, it isn't protecting you. Undo the change afterwards (`git restore exercises/bad_test.py`).
 
 ## Comparison worksheet
+If the weak prompt got a question back instead of a test, write what it asked in the first row and leave the rest of that column empty: asking is the right result. For "Fails for `problem_user`?", the codegen test types its username like `bad_test.py`, so change the string in it, run it, then change it back.
+
 | | Codegen | Claude (strong prompt) | Claude (weak prompt) |
 |---|---|---|---|
+| Wrote a test, or asked first? (what?) | wrote | | |
 | Locator types used | | | |
 | Number of `expect` assertions | | | |
 | Sleeps / hard waits | | | |

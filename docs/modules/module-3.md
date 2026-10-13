@@ -44,19 +44,24 @@ Questions:
 - Try `pytest -m smoek`. Why does it select nothing silently, while `@pytest.mark.smoek` on a test fails? (Look at `--strict-markers` in `pytest.ini`.)
 - Parallel runs only work because tests are independent. What would break if one test relied on another test's cart?
 
-## Exercise 3: Prove CLAUDE.md is doing the work (15 min)
-Ask Claude for the same test twice, once with the standards and once without.
+## Exercise 3: Prove CLAUDE.md is doing the work (20 min)
+Ask Claude for the same test twice, once with the standards and once without. Keep everything else the same, so the only difference is `CLAUDE.md`:
+- **A new session for each run.** CLAUDE.md is read at session start, and a session that has already seen one answer will copy it.
+- **No subagents.** The test-writer's instructions repeat several CLAUDE.md rules, so they would hide the difference. The prompt says so explicitly, because Claude may otherwise hand the task to the agent on its own.
+- **Run A's test out of the way before Run B.** Otherwise Run B can simply copy it.
 
-Don't use the test-writer agent in this exercise. Its instructions repeat several CLAUDE.md rules, so it would hide the difference you're trying to see. The prompt says so explicitly, because Claude may otherwise hand the task to the agent on its own.
-
-**Run A (with CLAUDE.md):**
+**Run A (with CLAUDE.md):** start a new session and send:
 ```
 Without using any subagent, add a regression test: after sorting by "Price (high to
 low)", adding the first product shown puts the Fleece Jacket in the cart.
 ```
-**Run B (without):** temporarily rename `CLAUDE.md` to `CLAUDE.md.off`, start a **new** Claude session (CLAUDE.md is read at session start), and send the same prompt. Rename it back afterwards.
+Then move the test it wrote out of the repo, for example to your desktop.
+
+**Run B (without):** rename `CLAUDE.md` to `CLAUDE.md.off`, start a **new** session and send the same prompt. Rename it back afterwards, and put Run A's test back.
 
 Compare: Where did each test go? Did it use page objects and `data/`? Did it get a marker? Any `nth(0)` or `.first`? Then, with `CLAUDE.md` renamed back, run the test-reviewer agent on both files.
+
+Expect Run B to be better than you'd guess. Without `CLAUDE.md`, Claude still reads `pages/`, `fixtures/` and the existing tests, and copies their patterns: **existing code is a standard too**. So ask which differences came from `CLAUDE.md`, and which the code alone would have taught. The rules that only `CLAUDE.md` carries (banned patterns, "run it 10 times", what not to do) are the ones it's worth writing down. In a new project with no code yet, `CLAUDE.md` is the only standard there is (Module 6).
 
 > Notice the trap in the prompt: "the first product shown" invites `.first`. A good answer uses the page object and asserts by name from `data/products.json`, or asks you whether position is really what you want to test.
 

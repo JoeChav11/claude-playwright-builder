@@ -1,7 +1,7 @@
 # Claude Code for Playwright Test Automation (Python)
 
 **Audience:** QA and automation engineers. Some Python helps; no prior Claude Code experience needed.
-**Duration:** 5 modules of about 2 hours each (timed exercises take 50 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
+**Duration:** 5 modules of about 2 hours each (timed exercises take 65 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
 **Practice target:** https://www.saucedemo.com, or a demo/staging app you are allowed to test. Never production.
 
 This is the course overview. The full exercises are in [modules/](modules/), and the finished reference repo is this one. To build your own project from scratch without the repo's `CLAUDE.md`, see [Starting without a CLAUDE.md](#starting-without-a-claudemd) at the end.
@@ -35,14 +35,15 @@ Install commands change. Verify against the Claude Code docs before the session.
 
 ## Module 2: First Playwright tests with Claude
 **Goals:** Generate and review tests instead of accepting them blindly.
+- What MCP is, and managing servers with `claude mcp list` and `/mcp`
+- Let Claude drive the browser with MCP, snapshot the accessibility tree, and derive locators from the live page
 - Playwright Python basics: `page`, locators, auto-waiting, `expect`
 - Locator priority: role, label, placeholder/text, then test-id (`data-test`), with CSS last and XPath never
-- Let Claude drive the browser with MCP and read the accessibility tree
 - Compare `playwright codegen` output to Claude-written tests
 - Prompt pattern: state the user flow, the assertions that prove success, and the constraints (no `sleep`, no brittle selectors)
 - The repo ships two subagents from here on: **test-writer** writes tests, **test-reviewer** reviews them and never edits
 
-**Exercise:** Have the test-writer write a checkout test from a strong prompt and a weak one. Review a passing-but-bad test (`exercises/bad_test.py`) by hand, then with the test-reviewer. Check whether your tests fail for `problem_user`.
+**Exercise:** Check which MCP servers are loaded, and have Claude drive the site and report roles and names. Have the test-writer write a checkout test from a strong prompt and a weak one. Review a passing-but-bad test (`exercises/bad_test.py`) by hand, then with the test-reviewer. Check whether your tests fail for `problem_user`.
 
 ## Module 3: Structuring the test repo and encoding standards
 **Goals:** Make Claude produce consistent code.
@@ -59,16 +60,14 @@ Install commands change. Verify against the Claude Code docs before the session.
 
 **Exercise:** Run the same prompt with and without `CLAUDE.md` and compare. Refactor the Module 2 tests into page objects in plan mode. Add one rule of your own and check Claude follows it.
 
-## Module 4: Playwright MCP and browser-aware authoring
-**Goals:** Have Claude inspect the real app instead of guessing selectors.
-- What MCP is, and managing servers with `claude mcp list` and `/mcp`
-- Claude navigates, snapshots the accessibility tree, and derives locators from the live page
+## Module 4: Explore, debug and fix failing tests
+**Goals:** Have Claude work from the real app, and from real evidence when tests fail, instead of guessing.
 - Explore-then-codify workflow: Claude explores the flow via MCP, then writes a deterministic pytest file
 - Debugging: feed Claude the failure output, traces (`--tracing retain-on-failure`), screenshots and console logs
 - Fixing failing tests: a "Fixing failing tests" section in `CLAUDE.md` so Claude never "fixes" a test by weakening the assertion, and flaky-test fixes name the root cause instead of adding retries or longer timeouts
-- Security: only point MCP at non-production environments and never expose real credentials
+- Security: only point MCP at non-production environments, never expose real credentials, and know which browser tools are pre-approved
 
-**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability. Break a test, ask Claude to "make it pass", then add the "Fixing failing tests" rule and compare.
+**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability. Debug a broken test with its output, trace and screenshot. Then ask Claude to "make it pass" when the app is the one that's wrong, add the "Fixing failing tests" rule, and compare.
 
 ## Module 5: Inside the writer and reviewer subagents
 **Goals:** Understand, calibrate and extend the subagents that write and review tests.

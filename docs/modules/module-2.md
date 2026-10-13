@@ -10,15 +10,45 @@ Files for this module: `tests/test_reference.py` (annotated examples, start here
 
 This repo ships two subagents in `.claude/agents/`: **test-writer** writes tests, **test-reviewer** reviews them and never edits. You use both from this module on; Module 5 looks at how they work.
 
-## Exercise 1: Let Claude drive (10 min)
+## Topics
+| Topic | What to know |
+|---|---|
+| What MCP is | Model Context Protocol: a standard way to give Claude extra tools. The Playwright server adds browser tools (`browser_navigate`, `browser_snapshot`, `browser_click`, ...) |
+| Managing servers | `claude mcp list`, `claude mcp get <name>`, `/mcp` inside a session |
+| Live inspection | Claude navigates, snapshots the accessibility tree, and derives locators from it |
+| Locators and `expect` | [playwright-basics.md](../playwright-basics.md): role locators first, web-first assertions that retry |
+| Prompt pattern | flow + assertions that prove success + constraints |
+| Reviewing | every generated test gets the [review checklist](../review-checklist.md), whoever wrote it |
+
+---
+
+## Exercise 1: What MCP is and which servers are loaded (10 min)
+1. Open [.mcp.json](../../.mcp.json). This file registers the `playwright` server for everyone who opens the repo. [.claude/settings.json](../../.claude/settings.json) enables it and pre-approves its browsing tools by name (`mcp__playwright__browser_navigate`, ...). Module 4, Exercise 4 looks at the ones it leaves out.
+2. In a terminal (outside Claude), run:
+   ```powershell
+   claude mcp list
+   claude mcp get playwright
+   ```
+   Note the **scope** of each server: *project* (from `.mcp.json`, shared with the team), *local* or *user* (only on your machine).
+3. Inside a Claude session, run `/mcp`. Confirm `playwright` is connected and open it to see its tool list.
+
+Discuss: the server is just a program (`npx @playwright/mcp`) that Claude can call. What can it do on your machine? Who decided it was safe to pre-approve?
+
+## Exercise 2: Let Claude drive (15 min)
 Goal: see the page the way Playwright sees it.
 
 Prompt Claude:
-> Use the playwright MCP tools to open saucedemo.com, log in as standard_user, and add the Bike Light to the cart. After each step, take a snapshot and list the interactive elements with their role and accessible name. Don't write any code.
+> Use the playwright MCP tools to open saucedemo.com, log in as standard_user, and add the Bike Light to the cart. After each step, take a snapshot and list the interactive elements with their role and accessible name. Then open the menu (top left), take a snapshot, and give me each menu item's role, accessible name, and the Playwright Python locator you would use. Don't write any code.
 
 Notice: the snapshot is the accessibility tree. The roles and names there are exactly what `get_by_role("button", name="...")` matches against. This is why role locators come first.
 
-## Exercise 2: Record with codegen (10 min)
+Check its menu answer against the locators this repo already uses, in [pages/components/header.py](../../pages/components/header.py):
+- Does the snapshot agree that Logout is a `button`, even though it is an `<a>` tag?
+- Which items have a role and name, and which would fall back to `get_by_test_id`?
+
+This is the habit `CLAUDE.md` asks for: "Check roles against the real accessibility tree, not the HTML tag."
+
+## Exercise 3: Record with codegen (10 min)
 ```powershell
 playwright codegen https://www.saucedemo.com --target python-pytest -o tests/codegen/test_recorded.py
 ```
@@ -26,7 +56,7 @@ Log in as `standard_user`, add any item, go to the cart, check out, finish. Clos
 
 Open the file and note: Which locator types did codegen pick? Are there any assertions? (Codegen records actions; it only adds assertions if you use its "Assert" toolbar buttons.)
 
-## Exercise 3: Have Claude write the same flow (15 min)
+## Exercise 4: Have Claude write the same flow (15 min)
 Use the **prompt pattern**: flow + assertions that prove success + constraints. Send it to the test-writer agent:
 
 ```
@@ -51,14 +81,14 @@ Did it stop and ask what proves success, or did it assume? (Its instructions say
 
 > Note: this repo's `CLAUDE.md` and page objects are already in place, so Claude will probably use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. That's expected: compare against codegen either way. Module 3 looks at the structure it used, and Module 3, Exercise 3 shows how much of this comes from `CLAUDE.md`.
 
-## Exercise 4: Review, don't accept (15 min)
+## Exercise 5: Review, don't accept (15 min)
 1. Read `exercises/bad_test.py` yourself first. Find as many problems as you can using the [review checklist](../review-checklist.md).
 2. Run it: `pytest exercises/bad_test.py -v`. **It passes.** That's the point.
 3. Ask: `Use the test-reviewer agent on exercises/bad_test.py`. Compare its list to yours.
-4. Run the test-reviewer agent on your **codegen** file and on the test-writer's file from Exercise 3. Does it judge them equally, or does Claude-written code get an easier ride?
+4. Run the test-reviewer agent on your **codegen** file and on the test-writer's file from Exercise 4. Does it judge them equally, or does Claude-written code get an easier ride?
 
-## Exercise 5: Prove the test catches bugs (stretch)
-saucedemo has built-in broken users: `problem_user` and `error_user` see bugs in the cart and checkout. Run your Exercise 3 test as each of them.
+## Exercise 6: Prove the test catches bugs (stretch)
+saucedemo has built-in broken users: `problem_user` and `error_user` see bugs in the cart and checkout. Run your Exercise 4 test as each of them.
 
 Your test never types a username. It gets a logged-in tab from a fixture, and that fixture picks the user from a fixture called `user_key` (default: `"standard"`, the keys are in `data/users.json`). To switch users, add this line directly above the test function:
 ```python

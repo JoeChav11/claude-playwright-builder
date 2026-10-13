@@ -103,11 +103,11 @@ Build a `failure-triager` yourself, using `/agents` to create it (or write the f
 
 Decide for yourself, then compare with a neighbour:
 - **Tools.** It needs to run pytest and reproduce the flow in a browser (Playwright MCP), but must not edit files. Which tools does it get?
-- **Evidence.** Which evidence should it collect? (Module 4, Exercise 4: failure output, trace, screenshot, browser console.)
+- **Evidence.** Which evidence should it collect? (Module 4, Exercise 2: failure output, trace, screenshot, browser console.)
 - **Verdict.** What should it return? (Suggested: test bug, app bug, or flaky, with the evidence for it.)
 - **Description.** When should Claude delegate to it without being asked?
 
-Test it: break a test as in Module 4, Exercise 4 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then recreate `tests/smoke/test_cart_problem.py` from Module 4, Exercise 5 and run the triager on it: it should call it an app bug. Delete both files afterwards.
+Test it: break a test as in Module 4, Exercise 2 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then recreate `tests/smoke/test_cart_problem.py` from Module 4, Exercise 3 and run the triager on it: it should call it an app bug. Delete both files afterwards.
 
 ## Exercise 6: Deny rules for every session (20 min)
 An agent's `tools` list limits that agent. Deny rules limit **every** session in the repo, including the agents. `allow` rules in [.claude/settings.json](../../.claude/settings.json) skip the permission prompt; `deny` rules block a tool call outright, in every mode, even if something else allows it. Add a `deny` list next to the existing `allow` list:

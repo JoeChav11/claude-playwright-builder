@@ -7,7 +7,7 @@ Hands-on modules for using Claude Code to write, review and structure Playwright
 | 1. Claude Code fundamentals | Operate Claude Code safely and control its context | [docs/modules/module-1.md](docs/modules/module-1.md) |
 | 2. First Playwright tests with Claude | Generate and review tests instead of accepting them blindly | [docs/modules/module-2.md](docs/modules/module-2.md) |
 | 3. Structuring the test repo and encoding standards | Make Claude produce consistent code | [docs/modules/module-3.md](docs/modules/module-3.md) |
-| 4. Playwright MCP and browser-aware authoring | Have Claude inspect the real app instead of guessing selectors | [docs/modules/module-4.md](docs/modules/module-4.md) |
+| 4. Explore, debug and fix failing tests | Have Claude work from the real app and from real evidence, instead of guessing | [docs/modules/module-4.md](docs/modules/module-4.md) |
 | 5. Inside the writer and reviewer subagents | Understand, calibrate and extend the subagents that write and review tests | [docs/modules/module-5.md](docs/modules/module-5.md) |
 | 6. Capstone | Apply everything to an app of your own choice | [docs/modules/module-6.md](docs/modules/module-6.md) |
 

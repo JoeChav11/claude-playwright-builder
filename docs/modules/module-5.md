@@ -23,6 +23,7 @@ A subagent file looks like this:
 name: <lowercase-with-dashes>
 description: <when to use it; Claude reads this to decide when to delegate>
 tools: <comma-separated list; leave the line out to inherit all tools>
+model: <sonnet, haiku, opus or inherit; leave the line out to use your session's model>
 ---
 <the subagent's instructions>
 ```
@@ -36,7 +37,8 @@ Open [.claude/agents/test-writer.md](../../.claude/agents/test-writer.md) and [.
 1. **Tools.** The reviewer lists `Read, Grep, Glob, Bash`. The writer has no `tools` line. What can each one do that the other can't? Why must the reviewer not have `Edit` or `Write`? (A reviewer that can edit will "fix" a test until it passes review.)
 2. **Approval.** CLAUDE.md says multi-file changes need your approval first. A subagent can't stop mid-task and ask you. How does the writer handle this instead? (Step 4: it stops and returns a file list. You saw this in Modules 3 and 4.)
 3. **Success criteria.** Which step makes the writer refuse a prompt like "write a test for checkout"? Why is refusing better than guessing?
-4. **Overlap with CLAUDE.md.** Both agents say "follow CLAUDE.md", and the writer repeats some of its rules. What goes wrong if the two drift apart? Which file should own each rule?
+4. **Model.** Both agents set `model: sonnet`, so they don't run on the frontier model even if your session does. Which job could a cheaper model handle (`haiku`), and which would suffer? Exercise 2's calibration is how you'd find out.
+5. **Overlap with CLAUDE.md.** Both agents say "follow CLAUDE.md", and the writer repeats some of its rules. What goes wrong if the two drift apart? Which file should own each rule?
 
 ## Exercise 2: Calibrate the reviewer (20 min)
 A reviewer is only useful if its verdicts are right. Test it against files where you already know the answer:

@@ -1,6 +1,7 @@
 ---
 name: test-writer
 description: Writes pytest-playwright tests for saucedemo from a feature or user-flow description, following CLAUDE.md. Use when a new test is needed.
+model: sonnet
 ---
 You write pytest-playwright tests for https://www.saucedemo.com in this repo.
 Follow every rule in CLAUDE.md: folder, marker, naming, data/, page object

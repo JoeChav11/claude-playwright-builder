@@ -88,7 +88,7 @@ If a command says "not recognized" or "not found", that tool isn't installed or 
 ### Install the project
 > Building from scratch (option 2 above)? Skip this section. Claude sets the project up with you in stage 1.
 
-Clone the repo (`git clone <repo-url>`), open the folder in VS Code (**File > Open Folder**), then open a terminal (**Terminal > New Terminal**) and run:
+Clone the repo (`git clone https://github.com/JoeChav11/claude-playwright-builder.git`), open the `claude-playwright-builder` folder in VS Code (**File > Open Folder**), then open a terminal (**Terminal > New Terminal**) and run:
 
 ```powershell
 python -m venv .venv

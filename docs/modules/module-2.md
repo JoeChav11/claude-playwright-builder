@@ -1,0 +1,69 @@
+# Module 2: First Playwright Tests with Claude
+
+**Goal:** generate and review tests instead of accepting them blindly.
+
+You will use Claude Code two ways:
+- **Driving the browser live** through the Playwright MCP server (Claude clicks around https://www.saucedemo.com and reads the page's accessibility tree).
+- **Writing Python test files** with `pytest-playwright`, which you run and review.
+
+Files for this module: `tests/test_reference.py` (annotated examples, start here), `tests/codegen/`, `tests/claude/`, `exercises/bad_test.py`, [playwright-basics.md](../playwright-basics.md), [review-checklist.md](../review-checklist.md).
+
+This repo ships two subagents in `.claude/agents/`: **test-writer** writes tests, **test-reviewer** reviews them and never edits. You use both from this module on; Module 5 looks at how they work.
+
+## Exercise 1: Let Claude drive (10 min)
+Goal: see the page the way Playwright sees it.
+
+Prompt Claude:
+> Use the playwright MCP tools to open saucedemo.com, log in as standard_user, and add the Bike Light to the cart. After each step, take a snapshot and list the interactive elements with their role and accessible name. Don't write any code.
+
+Notice: the snapshot is the accessibility tree. The roles and names there are exactly what `get_by_role("button", name="...")` matches against. This is why role locators come first.
+
+## Exercise 2: Record with codegen (10 min)
+```powershell
+playwright codegen https://www.saucedemo.com --target python-pytest -o tests/codegen/test_recorded.py
+```
+Log in as `standard_user`, add any item, go to the cart, check out, finish. Close the browser to save. Run it: `pytest tests/codegen -v`.
+
+Open the file and note: Which locator types did codegen pick? Are there any assertions? (Codegen records actions; it only adds assertions if you use its "Assert" toolbar buttons.)
+
+## Exercise 3: Have Claude write the same flow (15 min)
+Use the **prompt pattern**: flow + assertions that prove success + constraints. Send it to the test-writer agent:
+
+```
+Use the test-writer agent:
+FLOW: standard_user logs in, adds "Sauce Labs Backpack" and "Sauce Labs Bike Light"
+to the cart, opens the cart, checks out with name Ada Lovelace / zip 60601, finishes.
+ASSERT: cart badge shows 2 before checkout; cart page lists exactly those 2 items;
+overview shows Item total $39.98; final page shows "Thank you for your order!".
+CONSTRAINTS: no sleeps, no XPath, no CSS unless nothing else works, use the
+logged_in_page fixture, one test function, save it in tests/claude/.
+```
+(`logged_in_page` is defined in `fixtures/auth.py`. It opens a tab that is already logged in. You don't need to understand fixtures yet; Module 3 covers them.)
+
+Then send a weak prompt to the same agent and compare:
+```
+Use the test-writer agent: write a playwright test for checkout on saucedemo
+```
+Did it stop and ask what proves success, or did it assume? (Its instructions say to ask. Check that it does.)
+
+> Note: this repo's `CLAUDE.md` and page objects are already in place, so Claude will probably use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. That's expected: compare against codegen either way. Module 3 looks at the structure it used, and Module 3, Exercise 3 shows how much of this comes from `CLAUDE.md`.
+
+## Exercise 4: Review, don't accept (15 min)
+1. Read `exercises/bad_test.py` yourself first. Find as many problems as you can using the [review checklist](../review-checklist.md).
+2. Run it: `pytest exercises/bad_test.py -v`. **It passes.** That's the point.
+3. Ask: `Use the test-reviewer agent on exercises/bad_test.py`. Compare its list to yours.
+4. Run the test-reviewer agent on your **codegen** file and on the test-writer's file from Exercise 3. Does it judge them equally, or does Claude-written code get an easier ride?
+
+## Exercise 5: Prove the test catches bugs (stretch)
+saucedemo has built-in broken users. Change the login in your Exercise 3 test to `problem_user` or `error_user` and run it.
+- Does your test fail? It should: those users break the cart or checkout.
+- Does `exercises/bad_test.py` fail with `problem_user`? If a test can't catch a real bug, it isn't protecting you.
+
+## Comparison worksheet
+| | Codegen | Claude (strong prompt) | Claude (weak prompt) |
+|---|---|---|---|
+| Locator types used | | | |
+| Number of `expect` assertions | | | |
+| Sleeps / hard waits | | | |
+| Fails for `problem_user`? | | | |
+| Would you merge it? | | | |

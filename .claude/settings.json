@@ -1,0 +1,12 @@
+{
+  "enabledMcpjsonServers": ["playwright"],
+  "permissions": {
+    "allow": [
+      "mcp__playwright",
+      "Bash(pytest:*)",
+      "PowerShell(pytest:*)",
+      "Bash(playwright codegen:*)",
+      "PowerShell(playwright codegen:*)"
+    ]
+  }
+}

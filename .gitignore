@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+test-results/
+.playwright-mcp/
+reports/
+.env
+.env.*
+.claude/settings.local.json

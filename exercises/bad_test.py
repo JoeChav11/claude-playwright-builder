@@ -1,4 +1,4 @@
-"""A test that PASSES but is bad. Used in Exercise 4.
+"""A test that PASSES but is bad. Used in Module 2, Exercise 5.
 
 It lives outside tests/ so pytest does not collect it by default.
 Run it explicitly with:  pytest exercises/bad_test.py

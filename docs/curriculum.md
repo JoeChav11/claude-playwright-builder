@@ -1,7 +1,7 @@
 # Claude Code for Playwright Test Automation (Python)
 
 **Audience:** QA and automation engineers. Some Python helps; no prior Claude Code experience needed.
-**Duration:** 5 modules of about 2 hours each (timed exercises take 50 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
+**Duration:** 5 modules of about 2 hours each (timed exercises take 65 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
 **Practice target:** https://www.saucedemo.com, or a demo/staging app you are allowed to test. Never production.
 
 This is the course overview. The full exercises are in [modules/](modules/), and the finished reference repo is this one. To build your own project from scratch without the repo's `CLAUDE.md`, see [Starting without a CLAUDE.md](#starting-without-a-claudemd) at the end.
@@ -35,14 +35,15 @@ Install commands change. Verify against the Claude Code docs before the session.
 
 ## Module 2: First Playwright tests with Claude
 **Goals:** Generate and review tests instead of accepting them blindly.
+- What MCP is, and managing servers with `claude mcp list` and `/mcp`
+- Let Claude drive the browser with MCP, snapshot the accessibility tree, and derive locators from the live page
 - Playwright Python basics: `page`, locators, auto-waiting, `expect`
 - Locator priority: role, label, placeholder/text, then test-id (`data-test`), with CSS last and XPath never
-- Let Claude drive the browser with MCP and read the accessibility tree
 - Compare `playwright codegen` output to Claude-written tests
 - Prompt pattern: state the user flow, the assertions that prove success, and the constraints (no `sleep`, no brittle selectors)
 - The repo ships two subagents from here on: **test-writer** writes tests, **test-reviewer** reviews them and never edits
 
-**Exercise:** Have the test-writer write a checkout test from a strong prompt and a weak one. Review a passing-but-bad test (`exercises/bad_test.py`) by hand, then with the test-reviewer. Check whether your tests fail for `problem_user`.
+**Exercise:** Check which MCP servers are loaded, and have Claude drive the site and report roles and names. Have the test-writer write a checkout test from a strong prompt and a weak one. Review a passing-but-bad test (`exercises/bad_test.py`) by hand, then with the test-reviewer. Check whether your tests fail for `problem_user`.
 
 ## Module 3: Structuring the test repo and encoding standards
 **Goals:** Make Claude produce consistent code.
@@ -59,16 +60,14 @@ Install commands change. Verify against the Claude Code docs before the session.
 
 **Exercise:** Run the same prompt with and without `CLAUDE.md` and compare. Refactor the Module 2 tests into page objects in plan mode. Add one rule of your own and check Claude follows it.
 
-## Module 4: Playwright MCP and browser-aware authoring
-**Goals:** Have Claude inspect the real app instead of guessing selectors.
-- What MCP is, and managing servers with `claude mcp list` and `/mcp`
-- Claude navigates, snapshots the accessibility tree, and derives locators from the live page
+## Module 4: Explore, debug and fix failing tests
+**Goals:** Have Claude work from the real app, and from real evidence when tests fail, instead of guessing.
 - Explore-then-codify workflow: Claude explores the flow via MCP, then writes a deterministic pytest file
 - Debugging: feed Claude the failure output, traces (`--tracing retain-on-failure`), screenshots and console logs
 - Fixing failing tests: a "Fixing failing tests" section in `CLAUDE.md` so Claude never "fixes" a test by weakening the assertion, and flaky-test fixes name the root cause instead of adding retries or longer timeouts
-- Security: only point MCP at non-production environments and never expose real credentials
+- Security: only point MCP at non-production environments, never expose real credentials, and know which browser tools are pre-approved
 
-**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability. Break a test, ask Claude to "make it pass", then add the "Fixing failing tests" rule and compare.
+**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability. Debug a broken test with its output, trace and screenshot. Then ask Claude to "make it pass" when the app is the one that's wrong, add the "Fixing failing tests" rule, and compare.
 
 ## Module 5: Inside the writer and reviewer subagents
 **Goals:** Understand, calibrate and extend the subagents that write and review tests.
@@ -77,7 +76,7 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Both agents run on `model: sonnet` to keep costs down; choosing a model per job
 - Calibrating a reviewer against known good and bad tests
 - The writer → reviewer loop, and whether a reviewer is harder on code than its author
-- Deny rules in `.claude/settings.json`: block destructive commands, secret files and edits to the agents, for every session
+- Deny rules in `.claude/settings.json`: block destructive commands, reading secret files and edits to the agents, for every session. A seatbelt, not a sandbox: each rule matches one tool and pattern
 - Metrics: flake rate, time to author a test, review rejection rate
 
 **Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, then build a third agent yourself: a read-only `failure-triager` that returns test bug, app bug or flaky with evidence. Add deny rules and test them in a new session.
@@ -113,17 +112,17 @@ the list under "What the CLAUDE.md must contain". Don't create any other files y
 Read the draft before you accept it, then start a new session so Claude loads it.
 
 ### What the CLAUDE.md must contain
-- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`). Never build two stages at once.
+- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`). Never build two stages at once. The module exercises are written for the cloned repo; the table says which ones work after each stage. Until stage 5, steps that use an agent go to the main session.
 - **Stages and checks:**
 
-  | Stage | Builds | Check |
-  |---|---|---|
-  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest`), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected |
-  | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture, a passing-but-bad test to review | Tests pass |
-  | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes |
-  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test |
-  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session |
-  | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 |
+  | Stage | Builds | Check | Exercises that work |
+  |---|---|---|---|
+  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest` and the browsing tools by name), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected | Module 1 (no agents in `/agents` yet) |
+  | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture with a `user_key` override, a passing-but-bad test to review | Tests pass | Module 2, writing and reviewing in the main session, with inline locators |
+  | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes | Module 3, Ex 5 in the main session |
+  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test | Module 4; Ex 1 is the build |
+  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session | Module 5, as written |
+  | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 | Module 6 |
 
 - **Run commands:** smoke headed, parallel runs (`-n auto`), one test, debugging with traces and screenshots, the 10-run stability check.
 - **Standards:** the layout and where new code goes, page object rules (locators in `__init__`, no assertions), test rules (markers, naming, arrange/act/assert, `parametrize`, independent tests), the locator priority, and the banned patterns with what to do instead.

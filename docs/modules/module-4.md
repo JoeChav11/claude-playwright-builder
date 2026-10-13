@@ -1,15 +1,12 @@
-# Module 4: Playwright MCP and Browser-Aware Authoring
+# Module 4: Explore, Debug and Fix Failing Tests
 
-**Goal:** have Claude inspect the real app instead of guessing selectors.
+**Goal:** have Claude work from the real app, and from real evidence when tests fail, instead of guessing.
 
-Without a browser, Claude writes locators from memory of what pages "usually" look like. With the Playwright MCP server, it opens the real page, reads the accessibility tree, and builds locators from what is actually there. In this module you turn that into a repeatable workflow: explore live, then codify into a deterministic pytest file, then debug it with real evidence instead of guesses.
+In Module 2 you used the Playwright MCP server to look at pages. Here you turn that into a repeatable workflow: Claude explores a feature live, then codifies it into a deterministic pytest file. Then you deal with what happens next: tests fail. You debug failures with real evidence, set the rule that stops Claude "fixing" a test by making it weaker, and check what the browser tools can see and do.
 
 ## Topics
 | Topic | What to know |
 |---|---|
-| What MCP is | Model Context Protocol: a standard way to give Claude extra tools. The Playwright server adds browser tools (`browser_navigate`, `browser_snapshot`, `browser_click`, ...) |
-| Managing servers | `claude mcp list`, `claude mcp get <name>`, `/mcp` inside a session |
-| Live inspection | Claude navigates, snapshots the accessibility tree, and derives locators from it |
 | Explore, then codify | MCP exploration is for learning the page; the deliverable is a pytest file that runs without MCP |
 | Debugging | failure output, trace viewer, screenshots, console logs |
 | Fixing failing tests | never make a test pass by weakening it; decide whether the test or the app is wrong first |
@@ -17,29 +14,7 @@ Without a browser, Claude writes locators from memory of what pages "usually" lo
 
 ---
 
-## Exercise 1: What MCP is and which servers are loaded (10 min)
-1. Open [.mcp.json](../../.mcp.json). This file registers the `playwright` server for everyone who opens the repo. [.claude/settings.json](../../.claude/settings.json) enables it and pre-approves its tools (`mcp__playwright`).
-2. In a terminal (outside Claude), run:
-   ```powershell
-   claude mcp list
-   claude mcp get playwright
-   ```
-   Note the **scope** of each server: *project* (from `.mcp.json`, shared with the team), *local* or *user* (only on your machine).
-3. Inside a Claude session, run `/mcp`. Confirm `playwright` is connected and open it to see its tool list.
-
-Discuss: the server is just a program (`npx @playwright/mcp`) that Claude can call. What can it do on your machine? Who decided it was safe to pre-approve?
-
-## Exercise 2: Snapshot the real page (10 min)
-Prompt Claude:
-> Use the playwright MCP tools to open saucedemo.com, log in as standard_user, and open the menu (top left). Take a snapshot. For each menu item, give me its role, accessible name, and the Playwright Python locator you would use. Don't write any code.
-
-Check its answer against [pages/components/header.py](../../pages/components/header.py):
-- Does the snapshot agree that Logout is a `button`, even though it is an `<a>` tag?
-- Which items have a role and name, and which would fall back to `get_by_test_id`?
-
-This is the habit `CLAUDE.md` asks for: "Check roles against the real accessibility tree, not the HTML tag."
-
-## Exercise 3: Explore, then codify (25 min)
+## Exercise 1: Explore, then codify (25 min)
 This is the main exercise. Give the test-writer agent **a feature description only**: no selectors, no steps, no instructions to use MCP. It should explore the app via MCP, then write tests that run without MCP. Then you run them 10 times to check they are stable.
 
 Send only:
@@ -71,8 +46,8 @@ pytest tests/regression/test_reset_app_state.py --count 10 -n auto
 - If a run fails, give Claude the failure output and ask for the cause, not a retry or a longer timeout. Typical causes: asserting before the menu finishes animating, or depending on cart state from another test.
 - Re-run all 10 after any fix.
 
-## Exercise 4: Debug with real evidence (20 min)
-Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Keep the copy for Exercise 5, and delete it after that.
+## Exercise 2: Debug with real evidence (20 min)
+Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Delete the copy when you finish.
 
 1. **Failure output.** Run it and paste the full output to Claude:
    ```powershell
@@ -93,11 +68,32 @@ Break a test on purpose so there is something to debug. In a copy of [tests/smok
 
 Rule: give Claude evidence (output, trace, screenshot, console), not "the test is broken, fix it". Without evidence it will change the assertion to make the test pass.
 
-## Exercise 5: Never weaken the assertion (20 min)
-The most common bad "fix" is to change the test until it agrees with the bug. See it happen first, with the broken copy from Exercise 4:
+## Exercise 3: Never weaken the assertion (20 min)
+In Exercise 2 the test was wrong, so editing it was the right fix. This time the **app** is wrong. The most common bad "fix" is to change the test until it agrees with the bug. See it happen first.
 
-1. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_broken.py is failing. Make it pass.`
-2. Look at the diff. Did it change `"2"` back to `"1"` (correct here, because the test was wrong) or did it reason about **which side is wrong**? Now imagine the app had the bug. The same edit would hide it.
+1. Save this as `tests/smoke/test_cart_problem.py`. It's the cart smoke test with a different product, run as `problem_user` (the `user_key` line from Module 2, Exercise 6):
+   ```python
+   import pytest
+   from playwright.sync_api import expect
+
+   from data import PRODUCTS
+   from pages import InventoryPage
+
+   pytestmark = pytest.mark.smoke
+
+
+   @pytest.mark.parametrize("user_key", ["problem"])
+   def test_problem_user_adding_jacket_updates_cart_badge(inventory_page: InventoryPage):
+       jacket = inventory_page.product(PRODUCTS["fleece_jacket"]["name"])
+
+       jacket.add_to_cart()
+
+       expect(jacket.remove_button).to_be_visible()
+       expect(inventory_page.header.cart_badge).to_have_text("1")
+   ```
+2. Run it. It fails: the Remove button never appears. `problem_user` can't add the Fleece Jacket. That's a real bug in the app, and the test is right to fail.
+3. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_problem.py is failing. Make it pass.`
+4. Look at the diff. Every edit that makes this test pass hides the bug: switching to a product that works (the Backpack does), switching to `standard_user`, deleting the Remove-button `expect`, adding `xfail` or a longer timeout. Did Claude do one of these, or did it say the app is wrong?
 
 Add a guardrail to `CLAUDE.md`:
 ```markdown
@@ -109,20 +105,22 @@ Add a guardrail to `CLAUDE.md`:
   (failure output, trace, screenshot). If the app is wrong, don't edit the test:
   report the bug.
 ```
-Start a new session and repeat step 1. What changed in Claude's answer? Run the test-reviewer agent on whatever it proposes. Delete `tests/smoke/test_cart_broken.py` afterwards.
+Run `git restore tests/smoke/test_cart_problem.py` if Claude edited it, start a new session and repeat step 3. A good answer now calls it an app bug, points to the evidence (the Remove button never appears; compare `standard_user`), and leaves the test alone. If Claude still proposes an edit, run the test-reviewer agent on it. Should it be accepted?
+
+Discuss: a test that correctly catches a known app bug fails on every run. Who decides what happens to it (mark it, ticket it, leave it red), and why shouldn't that be Claude? Delete `tests/smoke/test_cart_problem.py` afterwards.
 
 **Flaky tests get the same rule.** A test that fails 1 run in 10 has a cause: an assertion before the page settles, shared state between tests, or order-dependent data. Adding `pytest-rerunfailures` or a longer timeout hides the cause and makes the suite slower. When you review a flaky-test fix, it must name the cause, and `pytest <file> --count 10 -n auto` must pass 10/10 after it.
 
 > **Stuck?** The `finished-example` branch has this section in its `CLAUDE.md`: `git diff main origin/finished-example -- CLAUDE.md`. Write your own first, then compare.
 
-## Exercise 6: Security review (10 min)
+## Exercise 4: Security review (10 min)
 The MCP browser sees everything you could see in that browser, and every snapshot is sent to the model as context.
 
 Discuss as a group, then check this repo against the list:
 - [ ] MCP only points at **non-production** environments. saucedemo.com is a public demo, which is why it's used here.
 - [ ] No real credentials in prompts, `data/*.json`, `.mcp.json`, or `CLAUDE.md`. The saucedemo logins are public.
 - [ ] Logins for real test environments come from environment variables or a secrets manager, not from the chat.
-- [ ] You know which MCP tools are pre-approved in `.claude/settings.json`, and why.
+- [ ] You know which MCP tools are pre-approved in `.claude/settings.json`, and why. This repo pre-approves the browsing tools by name. It leaves out `browser_evaluate` and `browser_run_code_unsafe` (they run any code Claude writes inside the page) and `browser_file_upload` (it sends files from your machine to the site), so those still ask first. Approving the whole server (`"mcp__playwright"`) would approve those too.
 - [ ] MCP output folders (`.playwright-mcp/`) and test artifacts (`test-results/`) are git-ignored. Traces and screenshots can contain session tokens and personal data.
 - [ ] The MCP server version is pinned (this repo pins it in `.mcp.json`; `@latest` would change between sessions without anyone reviewing it).
 
@@ -130,12 +128,11 @@ What would you change before using this setup on a client's staging environment?
 
 ---
 
-## Checklist: browser-aware authoring
-- [ ] You can list, inspect and check the status of MCP servers
+## Checklist: exploring, debugging and fixing
 - [ ] New locators come from a snapshot, not from memory
 - [ ] MCP is for exploring; the committed test is plain pytest that runs without it
 - [ ] A new test passes 10 runs in a row before you accept it
 - [ ] When a test fails, you give Claude the output, trace, screenshot or console log
 - [ ] Claude never makes a test pass by weakening it; `CLAUDE.md` says so
-- [ ] `tests/smoke/test_cart_broken.py` is deleted
+- [ ] `tests/smoke/test_cart_broken.py` and `tests/smoke/test_cart_problem.py` are deleted
 - [ ] You never point MCP at production or share real credentials with it

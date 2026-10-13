@@ -12,6 +12,7 @@ Without a browser, Claude writes locators from memory of what pages "usually" lo
 | Live inspection | Claude navigates, snapshots the accessibility tree, and derives locators from it |
 | Explore, then codify | MCP exploration is for learning the page; the deliverable is a pytest file that runs without MCP |
 | Debugging | failure output, trace viewer, screenshots, console logs |
+| Fixing failing tests | never make a test pass by weakening it; decide whether the test or the app is wrong first |
 | Security | non-production targets only, no real credentials |
 
 ---
@@ -55,7 +56,7 @@ Then approve: `Use the test-writer agent: <same feature>. The files you listed a
 
 Review the code before accepting:
 - [ ] The new locator lives in `Header` (it's in the menu on every page), not in the test
-- [ ] The test file has no MCP calls; it is plain pytest-playwright and runs in CI
+- [ ] The test file has no MCP calls; it is plain pytest-playwright and runs without MCP
 - [ ] Assertions use `expect(...)`, products come from `data/`
 - [ ] `pytest -n auto` still passes (CLAUDE.md requires this after changing `pages/`)
 - [ ] The test-reviewer agent accepts it. Run it on the new file.
@@ -71,7 +72,7 @@ pytest tests/regression/test_reset_app_state.py --count 10 -n auto
 - Re-run all 10 after any fix.
 
 ## Exercise 4: Debug with real evidence (20 min)
-Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Delete the copy when you finish.
+Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Keep the copy for Exercise 5, and delete it after that.
 
 1. **Failure output.** Run it and paste the full output to Claude:
    ```powershell
@@ -92,7 +93,29 @@ Break a test on purpose so there is something to debug. In a copy of [tests/smok
 
 Rule: give Claude evidence (output, trace, screenshot, console), not "the test is broken, fix it". Without evidence it will change the assertion to make the test pass.
 
-## Exercise 5: Security review (10 min)
+## Exercise 5: Never weaken the assertion (20 min)
+The most common bad "fix" is to change the test until it agrees with the bug. See it happen first, with the broken copy from Exercise 4:
+
+1. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_broken.py is failing. Make it pass.`
+2. Look at the diff. Did it change `"2"` back to `"1"` (correct here, because the test was wrong) or did it reason about **which side is wrong**? Now imagine the app had the bug. The same edit would hide it.
+
+Add a guardrail to `CLAUDE.md`:
+```markdown
+## Fixing failing tests
+- Never change an expected value, remove an `expect`, loosen a matcher
+  (`to_have_text` to `to_contain_text`), add `skip`/`xfail`, add retries or
+  raise a timeout to make a test pass.
+- First decide whether the test or the app is wrong, and say which, with evidence
+  (failure output, trace, screenshot). If the app is wrong, don't edit the test:
+  report the bug.
+```
+Start a new session and repeat step 1. What changed in Claude's answer? Run the test-reviewer agent on whatever it proposes. Delete `tests/smoke/test_cart_broken.py` afterwards.
+
+**Flaky tests get the same rule.** A test that fails 1 run in 10 has a cause: an assertion before the page settles, shared state between tests, or order-dependent data. Adding `pytest-rerunfailures` or a longer timeout hides the cause and makes the suite slower. When you review a flaky-test fix, it must name the cause, and `pytest <file> --count 10 -n auto` must pass 10/10 after it.
+
+> **Stuck?** The `finished-example` branch has this section in its `CLAUDE.md`: `git diff main origin/finished-example -- CLAUDE.md`. Write your own first, then compare.
+
+## Exercise 6: Security review (10 min)
 The MCP browser sees everything you could see in that browser, and every snapshot is sent to the model as context.
 
 Discuss as a group, then check this repo against the list:
@@ -113,4 +136,6 @@ What would you change before using this setup on a client's staging environment?
 - [ ] MCP is for exploring; the committed test is plain pytest that runs without it
 - [ ] A new test passes 10 runs in a row before you accept it
 - [ ] When a test fails, you give Claude the output, trace, screenshot or console log
+- [ ] Claude never makes a test pass by weakening it; `CLAUDE.md` says so
+- [ ] `tests/smoke/test_cart_broken.py` is deleted
 - [ ] You never point MCP at production or share real credentials with it

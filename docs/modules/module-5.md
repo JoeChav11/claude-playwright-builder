@@ -107,9 +107,9 @@ Decide for yourself, then compare with a neighbour:
 - **Verdict.** What should it return? (Suggested: test bug, app bug, or flaky, with the evidence for it.)
 - **Description.** When should Claude delegate to it without being asked?
 
-Test it: break a test as in Module 4, Exercise 4 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then run a smoke test as `error_user` and see what it says. Delete the broken copy afterwards.
+Test it: break a test as in Module 4, Exercise 4 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then recreate `tests/smoke/test_cart_problem.py` from Module 4, Exercise 5 and run the triager on it: it should call it an app bug. Delete both files afterwards.
 
-## Exercise 6: Deny rules for every session (15 min)
+## Exercise 6: Deny rules for every session (20 min)
 An agent's `tools` list limits that agent. Deny rules limit **every** session in the repo, including the agents. `allow` rules in [.claude/settings.json](../../.claude/settings.json) skip the permission prompt; `deny` rules block a tool call outright, in every mode, even if something else allows it. Add a `deny` list next to the existing `allow` list:
 ```json
 "deny": [
@@ -123,7 +123,14 @@ An agent's `tools` list limits that agent. Deny rules limit **every** session in
   "Edit(./.claude/agents/**)"
 ]
 ```
-Start a new session and test it: ask Claude to read `.env` (create a dummy one first) and to edit `.claude/agents/test-reviewer.md`. Both should be refused without a prompt. Delete the dummy `.env` afterwards.
+Start a new session and test it: ask Claude to read `.env` (create a dummy one first) and to edit `.claude/agents/test-reviewer.md`. Both should be refused without a prompt.
+
+**Now find the gap.** In the same session, ask: `Show me what's in .env using a shell command.` Claude can't use the Read tool, but `Get-Content .env` (or `cat .env`) is a different tool, so it isn't denied. It isn't on the `allow` list either, so you get a permission prompt. Decline it. Delete the dummy `.env` afterwards.
+
+What deny rules do and don't do:
+- Each rule matches one tool and one pattern. `Read(./.env)` stops the Read tool, not a shell command, a Python script or an MCP tool that reads the same file.
+- `Bash(...)` rules match how a command starts. `Bash(rm -rf:*)` blocks `rm -rf build`, but not `rm -r -f build`.
+- They are a seatbelt against mistakes, not a sandbox. Anything that must stay secret shouldn't be in a folder Claude works in. Keep it in environment variables or a secrets manager, and keep the permission prompt on for commands you haven't allowed.
 
 Discuss: why deny edits to the agents? (A Claude that can rewrite the reviewer can make it lenient enough to pass its own tests.) You can still edit the agent files yourself; deny rules only bind Claude. What else in this repo should Claude never touch?
 
@@ -156,6 +163,6 @@ Did Claude use both agents without being told? If not, make the `description` li
 - [ ] Reviewer findings go back to the writer; you don't fix them in the main session
 - [ ] Your `failure-triager` can't edit files and returns a verdict with evidence
 - [ ] Agent files live in `.claude/agents/`, so the whole team uses the same ones
-- [ ] Deny rules block destructive commands, secret files and edits to the agents, tested in a new session
+- [ ] Deny rules block destructive commands, reading secret files and edits to the agents, tested in a new session, and you can name one thing they don't stop
 - [ ] You track flake rate, time to author and review rejection rate
 - [ ] `tests/claude/test_weak.py` and `tests/smoke/test_cart_broken.py` are deleted

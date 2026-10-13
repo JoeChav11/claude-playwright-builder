@@ -16,7 +16,7 @@ Deliver all of the following in one repository.
 | **A tested `CLAUDE.md`** | You ran the same prompt with and without it (Module 3, Exercise 3) and can show the difference. It includes a "Fixing failing tests" section (Module 4, Exercise 5). |
 | **10 or more tests** | Smoke and regression markers; every test passes `--count 10 -n auto` |
 | **Two subagents** | In `.claude/agents/`, each with one job and a deliberately limited `tools` list (e.g. a writer and a reviewer, or a reviewer and a failure-triager). The reviewer is calibrated against known good and bad examples (Module 5, Exercise 2). |
-| **Deny rules** | In `.claude/settings.json`, blocking destructive commands, secret files and edits to your agents, and tested in a new session (Module 5, Exercise 6) |
+| **Deny rules** | In `.claude/settings.json`, blocking destructive commands, reading secret files and edits to your agents, tested in a new session (Module 5, Exercise 6). The writeup names what they don't stop. |
 | **A short writeup** | One page: where Claude's output needed correction, what you changed (prompt, `CLAUDE.md`, agent, deny rule) so it didn't happen again, and your three metrics (Module 5, Exercise 7) |
 
 ## Suggested order
@@ -39,6 +39,6 @@ Commit after each step, so you can show how the project and its standards change
 - [ ] Every locator came from a snapshot of the real page, and the committed tests run without MCP
 - [ ] Every test passes `--count 10 -n auto`
 - [ ] Two agents with limited tools; the reviewer rejects a known-bad test and accepts a known-good one
-- [ ] Deny rules block destructive commands, secret files and edits to the agents, tested in a new session
+- [ ] Deny rules block destructive commands, reading secret files and edits to the agents, tested in a new session; you know their gaps
 - [ ] No real credentials anywhere in the repo or the prompts
 - [ ] The writeup names what Claude got wrong, what you changed so it didn't recur, and your three metrics

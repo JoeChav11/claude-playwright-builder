@@ -18,7 +18,7 @@ Without a browser, Claude writes locators from memory of what pages "usually" lo
 ---
 
 ## Exercise 1: What MCP is and which servers are loaded (10 min)
-1. Open [.mcp.json](../../.mcp.json). This file registers the `playwright` server for everyone who opens the repo. [.claude/settings.json](../../.claude/settings.json) enables it and pre-approves its tools (`mcp__playwright`).
+1. Open [.mcp.json](../../.mcp.json). This file registers the `playwright` server for everyone who opens the repo. [.claude/settings.json](../../.claude/settings.json) enables it and pre-approves its browsing tools by name (`mcp__playwright__browser_navigate`, ...). Exercise 6 looks at the ones it leaves out.
 2. In a terminal (outside Claude), run:
    ```powershell
    claude mcp list
@@ -72,7 +72,7 @@ pytest tests/regression/test_reset_app_state.py --count 10 -n auto
 - Re-run all 10 after any fix.
 
 ## Exercise 4: Debug with real evidence (20 min)
-Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Keep the copy for Exercise 5, and delete it after that.
+Break a test on purpose so there is something to debug. In a copy of [tests/smoke/test_cart.py](../../tests/smoke/test_cart.py) saved as `tests/smoke/test_cart_broken.py`, change the expected badge text from `"1"` to `"2"`. Delete the copy when you finish.
 
 1. **Failure output.** Run it and paste the full output to Claude:
    ```powershell
@@ -94,10 +94,31 @@ Break a test on purpose so there is something to debug. In a copy of [tests/smok
 Rule: give Claude evidence (output, trace, screenshot, console), not "the test is broken, fix it". Without evidence it will change the assertion to make the test pass.
 
 ## Exercise 5: Never weaken the assertion (20 min)
-The most common bad "fix" is to change the test until it agrees with the bug. See it happen first, with the broken copy from Exercise 4:
+In Exercise 4 the test was wrong, so editing it was the right fix. This time the **app** is wrong. The most common bad "fix" is to change the test until it agrees with the bug. See it happen first.
 
-1. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_broken.py is failing. Make it pass.`
-2. Look at the diff. Did it change `"2"` back to `"1"` (correct here, because the test was wrong) or did it reason about **which side is wrong**? Now imagine the app had the bug. The same edit would hide it.
+1. Save this as `tests/smoke/test_cart_problem.py`. It's the cart smoke test with a different product, run as `problem_user` (the `user_key` line from Module 2, Exercise 5):
+   ```python
+   import pytest
+   from playwright.sync_api import expect
+
+   from data import PRODUCTS
+   from pages import InventoryPage
+
+   pytestmark = pytest.mark.smoke
+
+
+   @pytest.mark.parametrize("user_key", ["problem"])
+   def test_problem_user_adding_jacket_updates_cart_badge(inventory_page: InventoryPage):
+       jacket = inventory_page.product(PRODUCTS["fleece_jacket"]["name"])
+
+       jacket.add_to_cart()
+
+       expect(jacket.remove_button).to_be_visible()
+       expect(inventory_page.header.cart_badge).to_have_text("1")
+   ```
+2. Run it. It fails: the Remove button never appears. `problem_user` can't add the Fleece Jacket. That's a real bug in the app, and the test is right to fail.
+3. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_problem.py is failing. Make it pass.`
+4. Look at the diff. Every edit that makes this test pass hides the bug: switching to a product that works (the Backpack does), switching to `standard_user`, deleting the Remove-button `expect`, adding `xfail` or a longer timeout. Did Claude do one of these, or did it say the app is wrong?
 
 Add a guardrail to `CLAUDE.md`:
 ```markdown
@@ -109,7 +130,9 @@ Add a guardrail to `CLAUDE.md`:
   (failure output, trace, screenshot). If the app is wrong, don't edit the test:
   report the bug.
 ```
-Start a new session and repeat step 1. What changed in Claude's answer? Run the test-reviewer agent on whatever it proposes. Delete `tests/smoke/test_cart_broken.py` afterwards.
+Run `git restore tests/smoke/test_cart_problem.py` if Claude edited it, start a new session and repeat step 3. A good answer now calls it an app bug, points to the evidence (the Remove button never appears; compare `standard_user`), and leaves the test alone. If Claude still proposes an edit, run the test-reviewer agent on it. Should it be accepted?
+
+Discuss: a test that correctly catches a known app bug fails on every run. Who decides what happens to it (mark it, ticket it, leave it red), and why shouldn't that be Claude? Delete `tests/smoke/test_cart_problem.py` afterwards.
 
 **Flaky tests get the same rule.** A test that fails 1 run in 10 has a cause: an assertion before the page settles, shared state between tests, or order-dependent data. Adding `pytest-rerunfailures` or a longer timeout hides the cause and makes the suite slower. When you review a flaky-test fix, it must name the cause, and `pytest <file> --count 10 -n auto` must pass 10/10 after it.
 
@@ -122,7 +145,7 @@ Discuss as a group, then check this repo against the list:
 - [ ] MCP only points at **non-production** environments. saucedemo.com is a public demo, which is why it's used here.
 - [ ] No real credentials in prompts, `data/*.json`, `.mcp.json`, or `CLAUDE.md`. The saucedemo logins are public.
 - [ ] Logins for real test environments come from environment variables or a secrets manager, not from the chat.
-- [ ] You know which MCP tools are pre-approved in `.claude/settings.json`, and why.
+- [ ] You know which MCP tools are pre-approved in `.claude/settings.json`, and why. This repo pre-approves the browsing tools by name. It leaves out `browser_evaluate` and `browser_run_code_unsafe` (they run any code Claude writes inside the page) and `browser_file_upload` (it sends files from your machine to the site), so those still ask first. Approving the whole server (`"mcp__playwright"`) would approve those too.
 - [ ] MCP output folders (`.playwright-mcp/`) and test artifacts (`test-results/`) are git-ignored. Traces and screenshots can contain session tokens and personal data.
 - [ ] The MCP server version is pinned (this repo pins it in `.mcp.json`; `@latest` would change between sessions without anyone reviewing it).
 
@@ -137,5 +160,5 @@ What would you change before using this setup on a client's staging environment?
 - [ ] A new test passes 10 runs in a row before you accept it
 - [ ] When a test fails, you give Claude the output, trace, screenshot or console log
 - [ ] Claude never makes a test pass by weakening it; `CLAUDE.md` says so
-- [ ] `tests/smoke/test_cart_broken.py` is deleted
+- [ ] `tests/smoke/test_cart_broken.py` and `tests/smoke/test_cart_problem.py` are deleted
 - [ ] You never point MCP at production or share real credentials with it

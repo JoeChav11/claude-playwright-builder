@@ -77,7 +77,7 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Both agents run on `model: sonnet` to keep costs down; choosing a model per job
 - Calibrating a reviewer against known good and bad tests
 - The writer → reviewer loop, and whether a reviewer is harder on code than its author
-- Deny rules in `.claude/settings.json`: block destructive commands, secret files and edits to the agents, for every session
+- Deny rules in `.claude/settings.json`: block destructive commands, reading secret files and edits to the agents, for every session. A seatbelt, not a sandbox: each rule matches one tool and pattern
 - Metrics: flake rate, time to author a test, review rejection rate
 
 **Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, then build a third agent yourself: a read-only `failure-triager` that returns test bug, app bug or flaky with evidence. Add deny rules and test them in a new session.

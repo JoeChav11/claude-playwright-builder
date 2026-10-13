@@ -31,14 +31,17 @@ Use the **prompt pattern**: flow + assertions that prove success + constraints. 
 
 ```
 Use the test-writer agent:
-FLOW: standard_user logs in, adds "Sauce Labs Backpack" and "Sauce Labs Bike Light"
-to the cart, opens the cart, checks out with name Ada Lovelace / zip 60601, finishes.
+FLOW: a logged-in standard user adds the Backpack and the Bike Light to the cart,
+opens the cart, checks out as the default customer, and finishes.
 ASSERT: cart badge shows 2 before checkout; cart page lists exactly those 2 items;
-overview shows Item total $39.98; final page shows "Thank you for your order!".
-CONSTRAINTS: no sleeps, no XPath, no CSS unless nothing else works, use the
-logged_in_page fixture, one test function, save it in tests/claude/.
+overview's item total is the sum of their two prices; final page shows
+"Thank you for your order!".
+CONSTRAINTS: no sleeps, no XPath, no CSS unless nothing else works. Use the
+existing page object fixtures and take products and the customer from data/,
+no literal names, prices or customer details. One test function, saved in
+tests/claude/.
 ```
-(`logged_in_page` is defined in `fixtures/auth.py`. It opens a tab that is already logged in. You don't need to understand fixtures yet; Module 3 covers them.)
+The prompt describes the flow in a user's words and points to where the data lives, instead of pasting names and prices into it. A prompt full of literals invites a test full of literals, which this repo's `CLAUDE.md` forbids. You don't need to understand page objects, fixtures or `data/` yet; Module 3 covers them.
 
 Then send a weak prompt to the same agent and compare:
 ```
@@ -55,9 +58,15 @@ Did it stop and ask what proves success, or did it assume? (Its instructions say
 4. Run the test-reviewer agent on your **codegen** file and on the test-writer's file from Exercise 3. Does it judge them equally, or does Claude-written code get an easier ride?
 
 ## Exercise 5: Prove the test catches bugs (stretch)
-saucedemo has built-in broken users. Change the login in your Exercise 3 test to `problem_user` or `error_user` and run it.
-- Does your test fail? It should: those users break the cart or checkout.
-- Does `exercises/bad_test.py` fail with `problem_user`? If a test can't catch a real bug, it isn't protecting you.
+saucedemo has built-in broken users: `problem_user` and `error_user` see bugs in the cart and checkout. Run your Exercise 3 test as each of them.
+
+Your test never types a username. It gets a logged-in tab from a fixture, and that fixture picks the user from a fixture called `user_key` (default: `"standard"`, the keys are in `data/users.json`). To switch users, add this line directly above the test function:
+```python
+@pytest.mark.parametrize("user_key", ["problem", "error"])
+```
+That runs the test once per user; `pytest tests/claude -v` shows one result for each. (Module 3 explains fixtures; for now, this one line is all you need.)
+- Does your test fail for both? It should, if it checks what the user sees: these users can't add some products, or can't finish checkout.
+- Now `exercises/bad_test.py`: it logs in by typing a username, so change `"standard_user"` to `"problem_user"` in it and run it. Does it fail? If a test can't catch a real bug, it isn't protecting you. Undo the change afterwards (`git restore exercises/bad_test.py`).
 
 ## Comparison worksheet
 | | Codegen | Claude (strong prompt) | Claude (weak prompt) |

@@ -112,17 +112,17 @@ the list under "What the CLAUDE.md must contain". Don't create any other files y
 Read the draft before you accept it, then start a new session so Claude loads it.
 
 ### What the CLAUDE.md must contain
-- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`). Never build two stages at once.
+- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`). Never build two stages at once. The module exercises are written for the cloned repo; the table says which ones work after each stage. Until stage 5, steps that use an agent go to the main session.
 - **Stages and checks:**
 
-  | Stage | Builds | Check |
-  |---|---|---|
-  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest`), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected |
-  | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture, a passing-but-bad test to review | Tests pass |
-  | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes |
-  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test |
-  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session |
-  | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 |
+  | Stage | Builds | Check | Exercises that work |
+  |---|---|---|---|
+  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest` and the browsing tools by name), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected | Module 1 (no agents in `/agents` yet) |
+  | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture with a `user_key` override, a passing-but-bad test to review | Tests pass | Module 2, writing and reviewing in the main session, with inline locators |
+  | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes | Module 3, Ex 5 in the main session |
+  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test | Module 4; Ex 1 is the build |
+  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session | Module 5, as written |
+  | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 | Module 6 |
 
 - **Run commands:** smoke headed, parallel runs (`-n auto`), one test, debugging with traces and screenshots, the 10-run stability check.
 - **Standards:** the layout and where new code goes, page object rules (locators in `__init__`, no assertions), test rules (markers, naming, arrange/act/assert, `parametrize`, independent tests), the locator priority, and the banned patterns with what to do instead.

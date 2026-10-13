@@ -90,7 +90,7 @@ Install commands change. Verify against the Claude Code docs before the session.
   - Review flaky-test fixes for root cause, not retries or longer timeouts
 - Metrics: flake rate, time to author a test, review rejection rate
 
-These pieces are deliberately not in the reference repo: students build them.
+These pieces are deliberately not on `main`: students build them. The `finished-example` branch has a working version to compare against.
 
 **Capstone:** For a chosen app (not saucedemo), deliver:
 1. A tested `CLAUDE.md` (shown to make a difference, as in Module 3)

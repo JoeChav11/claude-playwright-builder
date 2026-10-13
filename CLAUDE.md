@@ -5,7 +5,7 @@ End-to-end tests for https://www.saucedemo.com, written in Playwright **Python**
 ## About this repo
 This is the **reference result and starting point** of a six-module training course on Claude Code + Playwright (`docs/modules/module-1.md` to `module-6.md`; index in `README.md`). Students clone it and work through the modules in order, one git branch per module. The exercises use, inspect and extend what is already here; only the Module 6 pieces are built from scratch. Students' branches are expected to drift from `main`. **If `pages/` and `tests/` don't exist, skip to "Building from scratch" below.**
 - Everything here is teaching material: keep it exemplary, consistent with the module docs, and commented where a comment teaches something.
-- **Deliberately absent** (students build them in Module 6): `.github/workflows/`, `deny` rules in `.claude/settings.json`, and a "Fixing failing tests" section in this file. Don't add them unless asked.
+- **Deliberately absent** (students build them in Module 6): `.github/workflows/`, `deny` rules in `.claude/settings.json`, and a "Fixing failing tests" section in this file. Don't add them to `main` unless asked. The finished versions live on the `finished-example` branch (`main` plus one commit): after changing `main`, merge it into `finished-example` (merge, not rebase; its deny rules block force-pushes).
 - When you change course material, keep the module docs, `docs/curriculum.md`, `README.md` and this file in sync. Exercises quote file paths, test counts (23) and commands; update them if those change.
 - When a student is working through a module of the cloned repo, help them do the exercise themselves on their branch, rather than copying a finished answer.
 

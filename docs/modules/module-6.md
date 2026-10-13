@@ -2,6 +2,8 @@
 
 **Goal:** run the suite in a pipeline and keep quality under control.
 
+> **Stuck?** The `finished-example` branch has the finished workflow, deny rules and "Fixing failing tests" section. See only what this module adds with `git diff main origin/finished-example`. Build your own first, then compare.
+
 Until now everything ran on your machine, with you watching. In CI nobody is watching: tests run on every pull request, and Claude can be called automatically when they fail. That's useful, and it's exactly where the guardrails matter most. This module puts the suite in GitHub Actions, adds a Claude triage step that proposes a fix as a pull request a human must approve, and sets the rules that stop Claude from "fixing" a test by making it weaker.
 
 **You need for this module:** a GitHub account, Git, your copy of this repo pushed to a GitHub repository you own, and an Anthropic API key stored as a repository secret named `ANTHROPIC_API_KEY` (**Settings > Secrets and variables > Actions**).

@@ -1,0 +1,81 @@
+name: playwright
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: playwright install --with-deps chromium
+      - run: >
+          pytest -n auto
+          --tracing retain-on-failure
+          --screenshot only-on-failure
+          --junitxml=reports/junit.xml
+      - name: Upload traces, screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            test-results/
+            reports/
+          retention-days: 14
+
+  triage:
+    needs: test
+    if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-results
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt && playwright install --with-deps chromium
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Claude triage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: >
+          claude -p "Tests failed in CI. Read reports/junit.xml and the traces and
+          screenshots in test-results/. For each failure decide: test bug, app bug,
+          or flaky, with evidence. Follow the 'Fixing failing tests' rules in
+          CLAUDE.md. Only for a test bug, edit the test or page object to fix it
+          and run pytest on that file. Write your findings to triage.md."
+          --strict-mcp-config
+          --allowedTools "Read,Grep,Glob,Edit,Write,Bash(pytest:*)"
+          --output-format json > triage.json
+      - name: Open a draft PR with the proposed fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then exit 0; fi
+          branch="claude/triage-${{ github.run_id }}"
+          git config user.name "claude-triage"
+          git config user.email "claude-triage@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A -- . ':!triage.json' ':!triage.md' ':!test-results' ':!reports'
+          git commit -m "Proposed fix from CI triage"
+          git push origin "$branch"
+          gh pr create --draft --base "${{ github.head_ref }}" \
+            --title "Proposed fix: CI triage for #${{ github.event.pull_request.number }}" \
+            --body-file triage.md

@@ -7,6 +7,16 @@
       "PowerShell(pytest:*)",
       "Bash(playwright codegen:*)",
       "PowerShell(playwright codegen:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "PowerShell(Remove-Item -Recurse:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Edit(./.github/workflows/**)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 **Goal:** understand, calibrate and extend the subagents that write and review your tests.
 
-Since Module 2 you've been handing work to two subagents that ship with this repo: **test-writer** and **test-reviewer**. In this module you open them up: what a subagent is, why each one is built the way it is, how to check the reviewer is actually right, how to chain the two, and how to build a third one yourself.
+Since Module 2 you've been handing work to two subagents that ship with this repo: **test-writer** and **test-reviewer**. In this module you open them up: what a subagent is, why each one is built the way it is, how to check the reviewer is actually right, how to chain the two, and how to build a third one yourself. Then you set limits for every session, not just the agents (deny rules), and pick the numbers that tell you whether all of this is working.
 
 ## What a subagent is
 A subagent is a separate Claude defined in a Markdown file in `.claude/agents/`. When your main session hands it a task, it:
@@ -109,7 +109,38 @@ Decide for yourself, then compare with a neighbour:
 
 Test it: break a test as in Module 4, Exercise 4 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then run a smoke test as `error_user` and see what it says. Delete the broken copy afterwards.
 
-## Exercise 6: Let Claude delegate on its own (stretch)
+## Exercise 6: Deny rules for every session (15 min)
+An agent's `tools` list limits that agent. Deny rules limit **every** session in the repo, including the agents. `allow` rules in [.claude/settings.json](../../.claude/settings.json) skip the permission prompt; `deny` rules block a tool call outright, in every mode, even if something else allows it. Add a `deny` list next to the existing `allow` list:
+```json
+"deny": [
+  "Bash(rm -rf:*)",
+  "PowerShell(Remove-Item -Recurse:*)",
+  "Bash(git push --force:*)",
+  "Bash(git reset --hard:*)",
+  "Read(./.env)",
+  "Read(./.env.*)",
+  "Read(./**/*.pem)",
+  "Edit(./.claude/agents/**)"
+]
+```
+Start a new session and test it: ask Claude to read `.env` (create a dummy one first) and to edit `.claude/agents/test-reviewer.md`. Both should be refused without a prompt. Delete the dummy `.env` afterwards.
+
+Discuss: why deny edits to the agents? (A Claude that can rewrite the reviewer can make it lenient enough to pass its own tests.) You can still edit the agent files yourself; deny rules only bind Claude. What else in this repo should Claude never touch?
+
+> **Stuck?** The `finished-example` branch has this deny list: `git diff main origin/finished-example -- .claude/settings.json`.
+
+## Exercise 7: Measure it (10 min)
+Pick three numbers to track for the capstone and beyond:
+
+| Metric | Definition | How to get it here |
+|---|---|---|
+| **Flake rate** | Runs that fail and then pass on unchanged code, divided by total runs | `pytest --count 10 -n auto` per new test |
+| **Time to author** | From first prompt to a test the reviewer ACCEPTs and that passes 10/10 | Note the start and end time for each test you write |
+| **Review rejection rate** | REJECT or ACCEPT WITH CHANGES verdicts, divided by all reviews | Count the test-reviewer verdicts |
+
+Discuss: which of these would you show a client? Which would go up if Claude got worse, and which would go up if your reviewer got stricter?
+
+## Exercise 8: Let Claude delegate on its own (stretch)
 You've been naming the agent in each prompt. Claude can also delegate on its own when a task matches an agent's `description`. In a new session, without naming any agent, ask:
 ```
 Add a test that the cart badge disappears after checkout is finished, and make
@@ -125,4 +156,6 @@ Did Claude use both agents without being told? If not, make the `description` li
 - [ ] Reviewer findings go back to the writer; you don't fix them in the main session
 - [ ] Your `failure-triager` can't edit files and returns a verdict with evidence
 - [ ] Agent files live in `.claude/agents/`, so the whole team uses the same ones
+- [ ] Deny rules block destructive commands, secret files and edits to the agents, tested in a new session
+- [ ] You track flake rate, time to author and review rejection rate
 - [ ] `tests/claude/test_weak.py` and `tests/smoke/test_cart_broken.py` are deleted

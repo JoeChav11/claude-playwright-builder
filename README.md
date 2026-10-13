@@ -9,14 +9,14 @@ Hands-on modules for using Claude Code to write, review and structure Playwright
 | 3. Structuring the test repo and encoding standards | Make Claude produce consistent code | [docs/modules/module-3.md](docs/modules/module-3.md) |
 | 4. Playwright MCP and browser-aware authoring | Have Claude inspect the real app instead of guessing selectors | [docs/modules/module-4.md](docs/modules/module-4.md) |
 | 5. Inside the writer and reviewer subagents | Understand, calibrate and extend the subagents that write and review tests | [docs/modules/module-5.md](docs/modules/module-5.md) |
-| 6. CI integration, guardrails, capstone | Run it in a pipeline and keep quality controlled | [docs/modules/module-6.md](docs/modules/module-6.md) |
+| 6. Capstone | Apply everything to an app of your own choice | [docs/modules/module-6.md](docs/modules/module-6.md) |
 
 ## How to use this repo
 This repo is the **reference result**: what a finished project looks like. There are two ways to use it.
 
-**1. Work on top of it.** Clone the whole repo. The page objects, fixtures, test data, tests, `CLAUDE.md` and subagents are already there, and every exercise runs on top of them: you use them, take them apart to see why they're built that way, and extend them. Each module explains its part of the repo. Module 6 is the exception: the CI workflow, the deny rules and the "Fixing failing tests" section of `CLAUDE.md` are deliberately **not** on `main`, and you build them yourself. If you get stuck, compare with the `finished-example` branch, which has all three working: `git diff main origin/finished-example`.
+**1. Work on top of it.** Clone the whole repo. The page objects, fixtures, test data, tests, `CLAUDE.md` and subagents are already there, and every exercise runs on top of them: you use them, take them apart to see why they're built that way, and extend them. Each module explains its part of the repo. The guardrails are the exception: the "Fixing failing tests" section of `CLAUDE.md` (Module 4) and the deny rules in `.claude/settings.json` (Module 5) are deliberately **not** on `main`, and you build them yourself. If you get stuck, compare with the `finished-example` branch, which has both: `git diff main origin/finished-example`. Module 6 is a capstone: you build a project like this one for an app of your own.
 
-**2. Build your own from scratch.** Start an empty folder with only this `README.md` and `CLAUDE.md` (add `docs/` too if you want the full exercises), open it in Claude Code, and ask Claude to help you build the project. `CLAUDE.md` tells Claude to build it in six stages that follow the modules, to stop after each stage so you can run and commit it, and to ask first who writes the tests.
+**2. Build your own from scratch.** Start an empty folder with only this `README.md` and `CLAUDE.md` (add `docs/` too if you want the full exercises), open it in Claude Code, and ask Claude to help you build the project. `CLAUDE.md` tells Claude to build it in five stages that follow Modules 1 to 5, to stop after each stage so you can run and commit it, and to ask first who writes the tests.
 No `CLAUDE.md`? Start from [docs/curriculum.md](docs/curriculum.md) instead: its last section has the prompt to have Claude draft one, and what it must contain.
 
 The general use case is to begin with learning how to interact with Claude Code. Use Claude to build a similar repo to this one with the outlines listed above. You can make it your own! This is meant to be a guide only! Also keep in mind you can choose to allow Claude to build everything, or build alongside the AI with writing manual tests to further your code writing skills. Have fun with it!
@@ -68,13 +68,11 @@ Do this before the session. Installs can take 20 to 30 minutes on a fresh machin
 | 4 | **Node.js LTS** (18 or newer) | Runs the Playwright MCP server that lets Claude control the browser | https://nodejs.org | Default installer options are fine. |
 | 5 | **Google Chrome** | The browser the MCP server opens | https://www.google.com/chrome | Tests use their own bundled Chromium, installed in Setup below. |
 | 6 | **Python extension for VS Code** (optional) | Syntax highlighting, and lets you run tests from the editor | Extensions, search "Python" (publisher: Microsoft) | |
-| 7 | **Git** | Get the project with `git clone`, keep each module on its own branch, and push to GitHub in Module 6 | https://git-scm.com | |
-| 8 | **GitHub account** (Module 6 only) | Runs the CI workflow | https://github.com | |
-| 9 | **Anthropic API key** (Module 6 only) | Lets Claude run in CI to triage failures | https://console.anthropic.com | Stored as a GitHub repository secret, never in the repo. |
+| 7 | **Git** | Get the project with `git clone`, and keep each module on its own branch | https://git-scm.com | |
 
 **Network:** you need access to `pypi.org`, `registry.npmjs.org`, the Playwright browser download servers and `saucedemo.com`. If you're on a corporate VPN or proxy and installs hang, try off-VPN or ask IT.
 
-**No other credentials needed before Module 6.** The Playwright MCP server runs locally with no API key, and the practice site's logins are public (they're shown on its login page).
+**No other credentials needed.** The Playwright MCP server runs locally with no API key, and the practice site's logins are public (they're shown on its login page).
 
 #### Check your installs
 Close and reopen your terminal after installing, then run:

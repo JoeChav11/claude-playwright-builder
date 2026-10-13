@@ -1,7 +1,7 @@
 # Claude Code for Playwright Test Automation (Python)
 
 **Audience:** QA and automation engineers. Some Python helps; no prior Claude Code experience needed.
-**Duration:** 6 modules, about 2 hours each (timed exercises take 50 to 115 minutes per module; the rest is teaching and discussion).
+**Duration:** 5 modules of about 2 hours each (timed exercises take 50 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
 **Practice target:** https://www.saucedemo.com, or a demo/staging app you are allowed to test. Never production.
 
 This is the course overview. The full exercises are in [modules/](modules/), and the finished reference repo is this one. To build your own project from scratch without the repo's `CLAUDE.md`, see [Starting without a CLAUDE.md](#starting-without-a-claudemd) at the end.
@@ -16,11 +16,10 @@ This is the course overview. The full exercises are in [modules/](modules/), and
 | Python 3.10+ | Language | python.org (Windows: tick "Add python.exe to PATH"), then create a venv |
 | Node.js LTS (18+) | Runs the Playwright MCP server via `npx` | nodejs.org |
 | Google Chrome | The browser the MCP server opens | google.com/chrome |
-| Git | Clone, one branch per module, push in Module 6 | git-scm.com |
+| Git | Clone, one branch per module | git-scm.com |
 | Python extension for VS Code (optional) | Highlighting, run tests from the editor | Marketplace, "Python" (Microsoft) |
 | Playwright for Python | Test framework | `pip install -r requirements.txt` (pytest, pytest-playwright, pytest-xdist, pytest-repeat), then `playwright install chromium` |
 | Playwright MCP | Lets Claude drive a browser | Checked into the repo as `.mcp.json`, pinned to `@playwright/mcp@0.0.83` (Windows wraps `npx` in `cmd /c`). Check with `/mcp`. |
-| GitHub account + Anthropic API key | Module 6 only: CI and the triage step | github.com, console.anthropic.com. The key is stored as a repository secret, never in the repo. |
 
 Install commands change. Verify against the Claude Code docs before the session.
 
@@ -66,9 +65,10 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Claude navigates, snapshots the accessibility tree, and derives locators from the live page
 - Explore-then-codify workflow: Claude explores the flow via MCP, then writes a deterministic pytest file
 - Debugging: feed Claude the failure output, traces (`--tracing retain-on-failure`), screenshots and console logs
+- Fixing failing tests: a "Fixing failing tests" section in `CLAUDE.md` so Claude never "fixes" a test by weakening the assertion, and flaky-test fixes name the root cause instead of adding retries or longer timeouts
 - Security: only point MCP at non-production environments and never expose real credentials
 
-**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability.
+**Exercise:** Give the test-writer a feature description only (e.g. "Reset App State" clears the cart). It explores with MCP, then writes tests. Run them 10 times (`--count 10 -n auto`) to check stability. Break a test, ask Claude to "make it pass", then add the "Fixing failing tests" rule and compare.
 
 ## Module 5: Inside the writer and reviewer subagents
 **Goals:** Understand, calibrate and extend the subagents that write and review tests.
@@ -77,28 +77,22 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Both agents run on `model: sonnet` to keep costs down; choosing a model per job
 - Calibrating a reviewer against known good and bad tests
 - The writer → reviewer loop, and whether a reviewer is harder on code than its author
-
-**Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, then build a third agent yourself: a read-only `failure-triager` that returns test bug, app bug or flaky with evidence.
-
-## Module 6: CI integration, guardrails, capstone
-**Goals:** Run it in a pipeline and keep quality controlled.
-- GitHub Actions: run Playwright on every PR, upload traces, screenshots and the JUnit report as artifacts
-- Claude in CI: on failure, run headless Claude (`claude -p`) to triage the failure and propose a fix as a **draft PR** (human approval required; Claude gets no git or GitHub permissions)
-- Guardrails:
-  - Deny rules in `.claude/settings.json` for destructive commands, secret files and edits to the workflow
-  - A "Fixing failing tests" section in `CLAUDE.md`: never "fix" a test by weakening the assertion
-  - Review flaky-test fixes for root cause, not retries or longer timeouts
+- Deny rules in `.claude/settings.json`: block destructive commands, secret files and edits to the agents, for every session
 - Metrics: flake rate, time to author a test, review rejection rate
 
-These pieces are deliberately not on `main`: students build them. The `finished-example` branch has a working version to compare against.
+**Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, then build a third agent yourself: a read-only `failure-triager` that returns test bug, app bug or flaky with evidence. Add deny rules and test them in a new session.
 
-**Capstone:** For a chosen app (not saucedemo), deliver:
-1. A tested `CLAUDE.md` (shown to make a difference, as in Module 3)
+The "Fixing failing tests" section (Module 4) and the deny rules (Module 5) are deliberately not on `main`: students build them. The `finished-example` branch has both to compare against.
+
+## Module 6: Capstone
+**Goals:** Apply Modules 1 to 5 to an app of your own choice.
+
+For a chosen app (not saucedemo), deliver:
+1. A tested `CLAUDE.md` (shown to make a difference, as in Module 3), with a "Fixing failing tests" section
 2. 10 or more UI tests with smoke and regression markers, each passing `--count 10 -n auto`
 3. Two subagents with limited `tools` lists, the reviewer calibrated
 4. Deny rules, tested in a new session
-5. A CI workflow with a failure-triage step that opens a draft PR
-6. A short writeup of where Claude's output needed correction, what you changed so it didn't recur, and your three metrics
+5. A short writeup of where Claude's output needed correction, what you changed so it didn't recur, and your three metrics
 
 ## Common pitfalls to teach
 - Tests that pass but assert nothing meaningful
@@ -127,9 +121,9 @@ Read the draft before you accept it, then start a new session so Claude loads it
   | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest`), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected |
   | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture, a passing-but-bad test to review | Tests pass |
   | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes |
-  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first | Passes `--count 10 -n auto` |
-  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet` | The reviewer rejects the bad test and accepts a good one |
-  | 6. CI and guardrails | The student builds the workflow, deny rules and "Fixing failing tests" section; Claude guides | The workflow runs on a PR |
+  | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test |
+  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session |
+  | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 |
 
 - **Run commands:** smoke headed, parallel runs (`-n auto`), one test, debugging with traces and screenshots, the 10-run stability check.
 - **Standards:** the layout and where new code goes, page object rules (locators in `__init__`, no assertions), test rules (markers, naming, arrange/act/assert, `parametrize`, independent tests), the locator priority, and the banned patterns with what to do instead.

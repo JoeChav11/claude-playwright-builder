@@ -17,6 +17,7 @@ This repo is the **reference result**: what a finished project looks like. There
 **1. Work on top of it.** Clone the whole repo. The page objects, fixtures, test data, tests, `CLAUDE.md` and subagents are already there, and every exercise runs on top of them: you use them, take them apart to see why they're built that way, and extend them. Each module explains its part of the repo. Module 6 is the exception: the CI workflow, the deny rules and the "Fixing failing tests" section of `CLAUDE.md` are deliberately **not** in the repo, and you build them yourself.
 
 **2. Build your own from scratch.** Start an empty folder with only this `README.md` and `CLAUDE.md` (add `docs/` too if you want the full exercises), open it in Claude Code, and ask Claude to help you build the project. `CLAUDE.md` tells Claude to build it in six stages that follow the modules, to stop after each stage so you can run and commit it, and to ask first who writes the tests.
+No `CLAUDE.md`? Start from [docs/curriculum.md](docs/curriculum.md) instead: its last section has the prompt to have Claude draft one, and what it must contain.
 
 The general use case is to begin with learning how to interact with Claude Code. Use Claude to build a similar repo to this one with the outlines listed above. You can make it your own! This is meant to be a guide only! Also keep in mind you can choose to allow Claude to build everything, or build alongside the AI with writing manual tests to further your code writing skills. Have fun with it!
 
@@ -52,7 +53,7 @@ tests/codegen/             Your codegen recordings                     (Module 2
 tests/claude/              Claude-written tests                        (Module 2)
 exercises/bad_test.py      A passing-but-bad test to review            (Module 2)
 
-docs/                      Module guides, cheat sheet, review checklist, POM guide
+docs/                      Curriculum overview, module guides, cheat sheet, review checklist, POM guide
 ```
 
 ## Setup
@@ -123,6 +124,7 @@ Activate the venv in each new terminal (`.\.venv\Scripts\Activate.ps1`), then:
 You can also ask Claude in the panel, e.g. "run the smoke tests headed".
 
 ## Reference
+- [docs/curriculum.md](docs/curriculum.md): course overview, install checklist, and how to draft a CLAUDE.md from scratch
 - [docs/playwright-basics.md](docs/playwright-basics.md): page, locators, auto-waiting, expect
 - [docs/review-checklist.md](docs/review-checklist.md): what to check in any generated test
 - [docs/pom-vs-components.md](docs/pom-vs-components.md): page objects vs. component helpers

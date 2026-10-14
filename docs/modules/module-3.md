@@ -41,6 +41,7 @@ pytest -m "not smoke" --collect-only -q
 ```
 Questions:
 - How much faster was `-n auto`? Why don't more workers always help? (Hint: CPU cores, and the site's response time.)
+- `-m "not smoke"` collects 20 tests, but there are only 17 regression tests. Which 3 are the extra ones, and why does "not smoke" pick them up? (Look for a `pytestmark` in `tests/test_reference.py`.)
 - Try `pytest -m smoek`. Why does it select nothing silently, while `@pytest.mark.smoek` on a test fails? (Look at `--strict-markers` in `pytest.ini`.)
 - Parallel runs only work because tests are independent. What would break if one test relied on another test's cart?
 
@@ -49,6 +50,7 @@ Ask Claude for the same test twice, in two copies of the same commit: one with `
 - **Two clean copies.** Run B works in a second copy where `CLAUDE.md` is deleted, not renamed: Claude can find and read a renamed file. Neither run can see the other's output.
 - **A new session for each run.** CLAUDE.md is read at session start.
 - **No subagents.** The test-writer's instructions repeat several CLAUDE.md rules, so they would hide the difference. The prompt says so explicitly, because Claude may otherwise hand the task to the agent on its own.
+- **No answer key.** This page explains what a good answer looks like, and both copies contain `docs/`. The prompt rules it out for both runs, so neither can read the answer.
 
 Setup: commit your work, then make the second copy with `git worktree` (a second folder checked out from the same repo):
 ```powershell
@@ -58,8 +60,9 @@ Remove-Item ../claude-playwright-b/CLAUDE.md
 
 **Run A (with CLAUDE.md):** in this repo, start a new session and send:
 ```
-Without using any subagent, add a regression test: after sorting by "Price (high to
-low)", adding the first product shown puts the Fleece Jacket in the cart.
+Without using any subagent or reading docs/, add a regression test: after sorting
+by "Price (high to low)", adding the first product shown puts the Fleece Jacket in
+the cart.
 ```
 **Run B (without):** open `../claude-playwright-b` in a second VS Code window (or `cd` there with this repo's venv still active), start a new session and send the same prompt.
 
@@ -84,6 +87,8 @@ Refactor tests/test_reference.py to follow CLAUDE.md: move it into the right
 folder(s) with markers, use the page object fixtures and data/, and delete anything
 that duplicates an existing test. Keep every behavior it currently checks.
 ```
+Expect the plan to delete most or all of the file: every test in it duplicates one in `tests/smoke/` or `tests/regression/`. That's the realistic case: much of a refactor is proving code is redundant before removing it. The skill here is checking that proof, assertion by assertion, instead of trusting "already covered".
+
 Review the plan **before** approving. Check that:
 - [ ] It lists every file it will create, change, or delete
 - [ ] Every assertion in the old file still exists somewhere (or the plan says which existing test already covers it)
@@ -102,13 +107,13 @@ name on the inventory page). Smoke: the detail page shows the right name and pri
 Regression: "Back to products" returns to the inventory, and adding to cart from the
 detail page updates the badge.
 ```
-This needs a new page object, so the writer should stop and reply with the files it would add or change instead of writing them. That list is its plan. A good one creates `pages/product_detail_page.py`, exports it from `pages/__init__.py`, adds a fixture in `fixtures/pages.py`, and puts tests in both folders with the right markers. Fix anything missing, then approve:
+This needs a new page object, so the writer should stop and reply with the files it would add or change instead of writing them. That list is its plan. A good one creates `pages/product_detail_page.py`, exports it from `pages/__init__.py`, adds a fixture in `fixtures/pages.py`, and puts tests in both folders with the right markers. Fix anything missing, then approve. Each agent run starts with a fresh context and doesn't remember its list, so paste the list into the approval:
 ```
-Use the test-writer agent: <same feature>. The files you listed are approved.
+Use the test-writer agent: <same feature>. These files are approved: <paste the list>.
 ```
 When it's done, run the test-reviewer agent on the new test files.
 
-Then **add one rule of your own** to CLAUDE.md (e.g. "every page object docstring states its URL", or "regression tests for errors must use parametrize"). Start a new session, ask the test-writer agent for another test, and check that it follows your new rule without being told.
+Then **add one rule of your own** to CLAUDE.md (e.g. "every test file starts with a one-line docstring naming the feature it covers"). Pick a rule the existing code doesn't already follow. If it does, Claude follows it by copying the code (Exercise 3), and you can't tell whether CLAUDE.md made the difference. Start a new session, ask the test-writer agent for another test, and check that it follows your new rule without being told.
 
 ## Exercise 6: Standards for problem users (stretch)
 `user_key` can be overridden per test:

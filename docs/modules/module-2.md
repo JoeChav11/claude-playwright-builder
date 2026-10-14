@@ -96,7 +96,7 @@ Your test never types a username. It gets a logged-in tab from a fixture, and th
 ```
 That runs the test once per user; `pytest tests/claude -v` shows one result for each. (Module 3 explains fixtures; for now, this one line is all you need.)
 - Does your test fail for both? It should, if it checks what the user sees: these users can't add some products, or can't finish checkout.
-- Now `exercises/bad_test.py`: it logs in by typing a username, so change `"standard_user"` to `"problem_user"` in it and run it. Does it fail? If a test can't catch a real bug, it isn't protecting you. Undo the change afterwards (`git restore exercises/bad_test.py`).
+- Now `exercises/bad_test.py`: it logs in by typing a username, so change `"standard_user"` to `"problem_user"` in it and run it. It fails too, but look at **how**: a 30-second timeout waiting for `#finish`, with no word about what the user saw. (The checkout form rejected the last name, so the Finish button never appeared.) It caught this bug by accident, because a later click had nothing to click. It never checks the cart, the total or the form, so a bug that doesn't block a click (a wrong price, a missing item) passes. Compare your Exercise 4 test's failure: does its message tell you what went wrong? Undo the change afterwards (`git restore exercises/bad_test.py`).
 
 ## Comparison worksheet
 If the weak prompt got a question back instead of a test, write what it asked in the first row and leave the rest of that column empty: asking is the right result. For "Fails for `problem_user`?", the codegen test types its username like `bad_test.py`, so change the string in it, run it, then change it back.
@@ -107,9 +107,10 @@ If the weak prompt got a question back instead of a test, write what it asked in
 | Locator types used | | | |
 | Number of `expect` assertions | | | |
 | Sleeps / hard waits | | | |
-| Fails for `problem_user`? | | | |
+| Fails for `problem_user`? Where, and does the message say why? | | | |
 | Would you merge it? | | | |
 
 ## Clean up
 - [ ] `exercises/bad_test.py` is back to `standard_user` (`git restore exercises/bad_test.py`)
 - [ ] Your codegen and Claude-written tests are committed on `module-2`
+- [ ] Building from scratch? The next stage branches from this one. After committing, delete your test files from `tests/codegen/` and `tests/claude/` (keep the READMEs) and commit again, so they don't run in later stages. They stay in `module-2`'s history.

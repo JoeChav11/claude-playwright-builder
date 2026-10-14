@@ -28,13 +28,13 @@ Use this on every generated test, whether it came from codegen or Claude.
 ## Repo standards (Module 3)
 - [ ] In `tests/smoke/` or `tests/regression/` with a matching `pytestmark` (see the note below)
 - [ ] No locators in the test file; they live in `pages/` or `pages/components/` (see the note below)
-- [ ] No literal usernames, product names, prices or customer details; uses `data/`
+- [ ] No literal usernames, product names, prices or customer details; uses `data/` (see the note below)
 - [ ] Reuses existing page objects, components and fixtures instead of near-duplicates
 - [ ] Page objects contain no assertions
 - [ ] Similar cases use `parametrize` with readable ids, not copy-paste
 - [ ] Safe to run in parallel (`pytest -n auto`)
 
-**Note on training material:** the two items marked "see the note below" don't apply to Module 2 training material (`tests/test_reference.py`, `tests/claude/`, `tests/codegen/`, `exercises/`). It lives outside those folders and may use inline locators. Mention it, but don't reject for it. Every other item applies.
+**Note on training material:** the three items marked "see the note below" don't apply to Module 2 training material (`tests/test_reference.py`, `tests/claude/`, `tests/codegen/`, `exercises/`). It lives outside those folders and may use inline locators and inline test data. Mention it, but don't reject for it. Every other item applies.
 
 ## The "would it catch a bug?" check
 Ask: if the feature broke, would this test fail? A test that clicks through checkout but never checks the result passes on a broken site.

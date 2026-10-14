@@ -29,7 +29,7 @@ The menu item has no locator yet, so the writer should explore, then stop and re
 - [ ] New locators came from a snapshot, not from memory
 - [ ] If it asked what proves success instead, that's correct too: "clears the cart" doesn't say what the user should see. Answer it and send the task again.
 
-Then approve: `Use the test-writer agent: <same feature>. The files you listed are approved.`
+Then approve, pasting its list (each agent run starts fresh and doesn't remember it): `Use the test-writer agent: <same feature>. These files are approved: <paste the list>.`
 
 Review the code before accepting:
 - [ ] The new locator lives in `Header` (it's in the menu on every page), not in the test
@@ -39,6 +39,8 @@ Review the code before accepting:
 - [ ] The test-reviewer agent accepts it. Run it on the new file.
 
 > Watch for: what did the snapshot show for the product buttons after the reset? If the app behaves differently from what the feature description says, a good answer reports it to you instead of quietly writing a test that matches either version.
+>
+> If it does report a mismatch, you decide, not Claude. Keep the tests to what works as described, so they can pass the 10-run check below, and write the mismatch up as a bug report for the app's developers. Don't accept a test that expects the buggy behavior. A test that fails every run because it catches the bug is Exercise 3's question.
 
 **Check stability: run the new tests 10 times yourself.** The writer reports a 10-run result, but check it rather than trust it. A test that passes once can still be flaky. `pytest-repeat` (in `requirements.txt`) runs each test 10 times; `-n auto` spreads the runs across workers. Replace the file name with the one Claude created:
 ```powershell
@@ -63,11 +65,11 @@ Break a test on purpose so there is something to debug. In a copy of [tests/smok
    playwright show-trace test-results\<test-folder>\trace.zip
    ```
    Step through the actions, the DOM snapshot at each step, and the network tab. (`--tracing retain-on-failure` keeps traces only for failures; use that day to day.)
-3. **Screenshots.** Run with `--screenshot only-on-failure` and open the PNG in `test-results/`. Give it to Claude with `@test-results/...` and ask what the page shows.
-4. **Console logs.** Ask Claude to reproduce the flow with MCP and read the browser console:
-   > Use the playwright MCP tools to log in as error_user, add the Backpack to the cart, and show me the browser console messages.
+3. **Screenshots.** Run with `--screenshot only-on-failure` and open the PNG in `test-results/`. Give it to Claude with `@test-results/...` and ask what the page shows. (`test-results/` is git-ignored, so the `@` menu may not suggest it; type the full path.)
+4. **Console logs and a baseline.** Ask Claude to reproduce a flow with MCP, as a broken user and as a working one:
+   > Use the playwright MCP tools to log in as error_user, add the Bolt T-Shirt to the cart, take a snapshot, and show me the browser console messages. Then do the same as standard_user.
 
-   Compare with `standard_user`. Console errors are often the first clue that a failure is the app's fault, not the test's.
+   `error_user` can't add the Bolt T-Shirt, and the snapshot shows it: the button still says "Add to cart". The console doesn't explain it. Both users log the same errors (failed requests the site makes for everyone), and the failed click logs nothing extra. A console error is only evidence if the working run doesn't have it too. Compare against a baseline before blaming the app or the test.
 
 Rule: give Claude evidence (output, trace, screenshot, console), not "the test is broken, fix it". Without evidence it will change the assertion to make the test pass.
 
@@ -103,27 +105,23 @@ In Exercise 2 the test was wrong, so editing it was the right fix. This time the
 3. Start a new session and ask Claude, with no other guidance: `tests/smoke/test_cart_problem.py is failing. Make it pass.`
 4. Look at the diff. Every edit that makes this test pass hides the bug: switching to a product that works (the Backpack does), switching to `standard_user`, deleting the Remove-button `expect`, adding `xfail` or a longer timeout. Did Claude do one of these, or did it say the app is wrong?
 
-Add a guardrail to `CLAUDE.md`:
-```markdown
-## Fixing failing tests
-- First decide whether the test or the app is wrong, and say which, with evidence
-  (failure output, trace, screenshot).
-- If the test is wrong (it expects something the app was never meant to do), fix
-  it and show the evidence that the old expectation was wrong.
-- If the app is wrong, don't edit the test: report the bug. Never change a correct
-  expected value, remove an `expect`, loosen a matcher (`to_have_text` to
-  `to_contain_text`), add `skip`/`xfail`, add retries or raise a timeout to make
-  it pass.
-```
+   Don't be surprised if it calls it an app bug straight away. This bug is obvious, and the test's name says `problem_user`. One good answer isn't a guarantee, though. The guardrail you write next makes it the rule for every session and every agent, including on bugs that are harder to spot.
+
+Now write a guardrail yourself: a `## Fixing failing tests` section in `CLAUDE.md`. Keep it short (Claude reads it every session), and make it cover:
+- Decide first whether the test or the app is wrong, and say which, with evidence (failure output, trace, screenshot).
+- A test may only be changed with evidence that its old expectation was wrong.
+- If the app is wrong, report the bug and leave the test alone. Name the edits that count as weakening, so Claude can't argue its way around them: changing a correct expected value, removing an `expect`, loosening a matcher (`to_have_text` to `to_contain_text`), `skip`/`xfail`, retries, longer timeouts.
+- Flaky tests get the same treatment (see below): name the cause, fix it, and re-run `--count 10 -n auto`.
+
 That's why Exercise 2's fix was fine: the evidence showed the test expected the wrong badge. Here the evidence points at the app.
 
-Undo whatever Claude changed: run `git status`, then `git restore <file>` for every file it lists (the committed version of `test_cart_problem.py` comes back). Start a new session and repeat step 3. A good answer now calls it an app bug, points to the evidence (the Remove button never appears; compare `standard_user`), and leaves the test alone. If Claude still proposes an edit, run the test-reviewer agent on it. Should it be accepted?
+Undo whatever Claude changed: run `git status`, then `git restore <file>` for every file Claude changed (the committed version of `test_cart_problem.py` comes back). Leave `CLAUDE.md` alone: it now holds your guardrail. Start a new session and repeat step 3. A good answer now calls it an app bug, points to the evidence (the Remove button never appears; compare `standard_user`), and leaves the test alone. If Claude still proposes an edit, run the test-reviewer agent on it. Should it be accepted?
 
 Discuss: a test that correctly catches a known app bug fails on every run. Who decides what happens to it (mark it, ticket it, leave it red), and why shouldn't that be Claude? Remove it afterwards: `git rm tests/smoke/test_cart_problem.py`, then `git commit -m "Remove Module 4 exercise test"`.
 
 **Flaky tests get the same rule.** A test that fails 1 run in 10 has a cause: an assertion before the page settles, shared state between tests, or order-dependent data. Adding `pytest-rerunfailures` or a longer timeout hides the cause and makes the suite slower. When you review a flaky-test fix, it must name the cause, and `pytest <file> --count 10 -n auto` must pass 10/10 after it. Report the run as you made it ("10/10, `-n auto`").
 
-> **Stuck?** The `finished-example` branch has this section in its `CLAUDE.md`: `git diff main origin/finished-example -- CLAUDE.md`. Write your own first, then compare.
+> **Stuck?** The `finished-example` branch has this section in its `CLAUDE.md`: `git diff main origin/finished-example -- CLAUDE.md` (building from scratch: read [its CLAUDE.md on GitHub](https://github.com/JoeChav11/claude-playwright-builder/blob/finished-example/CLAUDE.md)). Write your own first, then compare.
 
 ## Exercise 4: Security review (10 min)
 The MCP browser sees everything you could see in that browser, and every snapshot is sent to the model as context.

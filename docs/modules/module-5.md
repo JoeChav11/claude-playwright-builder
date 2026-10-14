@@ -78,12 +78,16 @@ Ask Claude:
 Feature: "Continue Shopping" on the cart page returns to the products page, and
 the cart badge still shows the same count.
 
-1. Use the test-writer agent to write regression tests for it.
+1. Use the test-writer agent to write regression tests for it. If it stops and
+   returns a list of files it would add or change, stop and show me the list.
+   Don't approve it yourself.
 2. Use the test-reviewer agent to review what it wrote.
 3. If the verdict is REJECT or ACCEPT WITH CHANGES, send the reviewer's findings
    back to the test-writer agent and review again. Stop after 2 rounds.
 4. Give me both verdicts and the final file.
 ```
+If it stops with a file list (a new page object method, for example), review the list as in Module 3, Exercise 5, then send the prompt again with "These files are approved: <the list>" added to step 1. Approving changes is your job, not the main session's.
+
 While it runs, check `/context` in your main session. The agents' snapshots and test runs are not in it.
 
 Review:
@@ -101,7 +105,7 @@ Compare two reviews of the same file:
 Which found more problems? The main session already "knows" why every line was written. The subagent sees only the file and its instructions, like a colleague reviewing a PR.
 
 ## Exercise 5: Build a third agent (optional, 20 min)
-Optional: do it in class if there's time, or afterwards. Build a `failure-triager` yourself, using `/agents` to create it (or write the file by hand). Its job: given a failing test, find out why, without changing anything.
+Optional: do it in class if there's time, or afterwards. Build a `failure-triager` yourself, using `/agents` to create it (or write the file by hand). If you do it after Exercise 6, write the file by hand: the deny rule there stops Claude from writing in `.claude/agents/`. Its job: given a failing test, find out why, without changing anything.
 
 Decide for yourself, then compare with a neighbour:
 - **Tools.** It needs to run pytest and reproduce the flow in a browser (Playwright MCP), but must not edit files. Which tools does it get? If you give it `Bash` for pytest, it has a way to edit again (Exercise 1); say in its instructions what `Bash` is for.
@@ -112,32 +116,31 @@ Decide for yourself, then compare with a neighbour:
 Test it: break a test as in Module 4, Exercise 2 (`tests/smoke/test_cart_broken.py`), and ask `Use the failure-triager agent on tests/smoke/test_cart_broken.py`. It should call it a test bug. Then recreate `tests/smoke/test_cart_problem.py` from Module 4, Exercise 3 and run the triager on it: it should call it an app bug. Delete both files afterwards.
 
 ## Exercise 6: Deny rules for every session (20 min)
-An agent's `tools` list limits that agent. Deny rules limit **every** session in the repo, including the agents. `allow` rules in [.claude/settings.json](../../.claude/settings.json) skip the permission prompt; `deny` rules block a tool call outright, in every mode, even if something else allows it. Add a `deny` list next to the existing `allow` list:
+An agent's `tools` list limits that agent. Deny rules limit **every** session in the repo, including the agents. `allow` rules in [.claude/settings.json](../../.claude/settings.json) skip the permission prompt; `deny` rules block a tool call outright, in every mode, even if something else allows it. Add a `deny` list next to the existing `allow` list. Each entry is a tool and a pattern, written the same way as the `allow` entries:
 ```json
 "deny": [
-  "Bash(rm -rf:*)",
-  "PowerShell(Remove-Item -Recurse:*)",
-  "Bash(git push --force:*)",
-  "Bash(git reset --hard:*)",
-  "Read(./.env)",
-  "Read(./.env.*)",
-  "Read(./**/*.pem)",
-  "Edit(./.claude/agents/**)"
+  "Read(./.env)"
 ]
 ```
+Write the rest yourself. Your list must block:
+- recursive deletes: `rm -rf` in Bash, and `Remove-Item -Recurse` in PowerShell
+- `git push --force` and `git reset --hard`, in **both** Bash and PowerShell. On Windows, Claude can run git through either one, and a `Bash(...)` rule doesn't cover PowerShell.
+- reading `.env`, `.env.*` and any `*.pem` file (`**` matches any folder depth)
+- editing anything in `.claude/agents/`
+
 Start a new session and test it: ask Claude to read `.env` (create a dummy one first) and to edit `.claude/agents/test-reviewer.md`. Both should be refused without a prompt.
 
 **Now find the gap.** In the same session, ask: `Show me what's in .env using a shell command.` Claude can't use the Read tool, but `Get-Content .env` (or `cat .env`) is a different tool, so it isn't denied. It isn't on the `allow` list either, so you get a permission prompt. Decline it. Delete the dummy `.env` afterwards.
 
 What deny rules do and don't do:
 - Each rule matches one tool and one pattern. `Read(./.env)` stops the Read tool, not a shell command, a Python script or an MCP tool that reads the same file.
-- `Bash(...)` rules match how a command starts. `Bash(rm -rf:*)` blocks `rm -rf build`, but not `rm -r -f build`.
+- `Bash(...)` and `PowerShell(...)` rules match how a command starts, in that shell only. `Bash(rm -rf:*)` blocks `rm -rf build`, but not `rm -r -f build`, and not the same command run through PowerShell.
 - `Edit(./.claude/agents/**)` covers Claude's file-editing tools (Edit and Write), but not a shell command that writes to the same file. Same gap as the reviewer's `Bash` in Exercise 1.
 - They are a seatbelt against mistakes, not a sandbox. Anything that must stay secret shouldn't be in a folder Claude works in. Keep it in environment variables or a secrets manager, and keep the permission prompt on for commands you haven't allowed.
 
 Discuss: why deny edits to the agents? (A Claude that can rewrite the reviewer can make it lenient enough to pass its own tests.) You can still edit the agent files yourself; deny rules only bind Claude. What else in this repo should Claude never touch?
 
-> **Stuck?** The `finished-example` branch has this deny list: `git diff main origin/finished-example -- .claude/settings.json`.
+> **Stuck?** The `finished-example` branch has a deny list: `git diff main origin/finished-example -- .claude/settings.json` (building from scratch: read [its settings on GitHub](https://github.com/JoeChav11/claude-playwright-builder/blob/finished-example/.claude/settings.json)). Write your own first, then compare.
 
 ## Exercise 7: Measure it (10 min)
 Pick three numbers to track for the capstone and beyond:
@@ -156,7 +159,7 @@ You've been naming the agent in each prompt. Claude can also delegate on its own
 Add a test that the cart badge disappears after checkout is finished, and make
 sure it gets reviewed.
 ```
-Did Claude use both agents without being told? If not, make the `description` lines more specific (e.g. "Use proactively after any test file changes") and try again. Is automatic delegation what you want on a team, or should people name the agent?
+Did Claude use both agents without being told? If not, make the `description` lines more specific (e.g. "Use proactively after any test file changes"), then start a new session and try again. Edit the agent files yourself: since Exercise 6, Claude can't. Is automatic delegation what you want on a team, or should people name the agent?
 
 ---
 
@@ -168,4 +171,4 @@ Did Claude use both agents without being told? If not, make the `description` li
 - [ ] Agent files live in `.claude/agents/`, so the whole team uses the same ones
 - [ ] Deny rules block destructive commands, reading secret files and edits to the agents, tested in a new session, and you can name one thing they don't stop
 - [ ] You track flake rate, time to author and review rejection rate
-- [ ] `tests/claude/test_weak.py` and `tests/smoke/test_cart_broken.py` are deleted
+- [ ] `tests/claude/test_weak.py`, `tests/smoke/test_cart_broken.py` and `tests/smoke/test_cart_problem.py` are deleted

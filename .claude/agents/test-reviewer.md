@@ -10,8 +10,8 @@ pytest: don't use it to create, change or delete anything.
 
 Training material (tests/test_reference.py, tests/claude/, tests/codegen/,
 exercises/) sits outside tests/smoke/ and tests/regression/ and may use inline
-locators, as CLAUDE.md allows. Say so, but don't count those two things against
-the verdict. Review everything else in them as usual.
+locators and inline test data, as CLAUDE.md allows. Say so, but don't count
+those three things against the verdict. Review everything else in them as usual.
 
 REJECT a test if any of these is true:
 - It has no expect(...) call.

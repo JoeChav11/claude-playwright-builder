@@ -2,7 +2,7 @@
 
 **Goal:** apply everything from Modules 1 to 5 to an app of your own choice, without a reference repo to lean on.
 
-Until now you worked on top of a finished project: the page objects, fixtures, `CLAUDE.md` and agents were already there, and the exercises took them apart and extended them. In the capstone you start from an empty folder and an app you haven't tested before, and you build the same kind of project yourself, with Claude. The hard part isn't the tests. It's writing standards and agents that make Claude produce good tests for an app neither of you knows yet, and noticing when it doesn't.
+Until now you had saucedemo and this course as a guide: either the finished project was already there and the exercises took it apart and extended it, or you built it stage by stage with `CLAUDE.md` telling Claude what each stage needed. In the capstone you start from an empty folder and an app you haven't tested before, and you build the same kind of project yourself, with Claude. The hard part isn't the tests. It's writing standards and agents that make Claude produce good tests for an app neither of you knows yet, and noticing when it doesn't.
 
 ---
 
@@ -28,11 +28,11 @@ Deliver all of the following in one repository.
 ## Suggested order
 | Step | Do | Covered in |
 |---|---|---|
-| 1 | Settle "Before you start". Set up the project: venv, `requirements.txt`, `pytest.ini`, `conftest.py`, `.mcp.json`, `.claude/settings.json` with your pre-approvals and deny rules. Test the deny rules in a new session. | Modules 1, 4 and 5 |
+| 1 | Settle "Before you start". Set up the project: venv, `requirements.txt`, `pytest.ini`, `conftest.py`, `.mcp.json`, `.claude/settings.json` with your pre-approvals and deny rules (all except the one for `.claude/agents/`, which comes in step 5). Test the deny rules in a new session. | Modules 1, 4 and 5 |
 | 2 | Have Claude explore the app with MCP and list its main user flows. Draft the coverage map: which are smoke, which are regression. | Modules 2 and 4 |
 | 3 | Run `/init`, then rewrite the `CLAUDE.md` it generates using this repo's as a model. Include "Fixing failing tests" from the start. | Modules 1, 3 and 4 |
 | 4 | Write two or three tests with Claude, in plan mode, and review them by hand. Fix what you don't like in `CLAUDE.md`, not just in the code. | Modules 2 and 3 |
-| 5 | Add the writer and reviewer agents. Calibrate the reviewer before you trust it. | Module 5 |
+| 5 | Add the writer and reviewer agents. Calibrate the reviewer before you trust it. Then add the deny rule for `.claude/agents/` and test it in a new session (from then on, edit the agents by hand). | Module 5 |
 | 6 | Write the rest of the tests through the writer → reviewer loop. Record your metrics as you go. | Module 5 |
 | 7 | Show one bug caught. Run the with/without `CLAUDE.md` comparison. Write the one-page writeup. | Modules 2, 3 and 5 |
 

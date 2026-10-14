@@ -1,7 +1,7 @@
 # Claude Code for Playwright Test Automation (Python)
 
 **Audience:** QA and automation engineers. Some Python helps; no prior Claude Code experience needed.
-**Duration:** 5 modules of about 2 hours each (timed exercises take 65 to 115 minutes per module; the rest is teaching and discussion), then a capstone project in Module 6.
+**Duration:** 5 modules of about 2 hours each (core exercises take 65 to 95 minutes per module; the rest is teaching, discussion and recovery time), then a capstone project in Module 6. Exercises are core unless marked **optional** (do it if there's time, or afterwards) or **stretch** (for fast finishers). Timings assume the cloned repo; building from scratch adds the build time of each stage.
 **Practice target:** https://www.saucedemo.com, or a demo/staging app you are allowed to test. Never production.
 
 This is the course overview. The full exercises are in [modules/](modules/), and the finished reference repo is this one. To build your own project from scratch without the repo's `CLAUDE.md`, see [Starting without a CLAUDE.md](#starting-without-a-claudemd) at the end.
@@ -12,13 +12,13 @@ This is the course overview. The full exercises are in [modules/](modules/), and
 |---|---|---|
 | VS Code | Editor | code.visualstudio.com |
 | Claude Code VS Code extension | The agent: chat panel, inline diffs, permission modes | VS Code Marketplace, "Claude Code" (publisher: Anthropic). Needs a paid Claude plan or an API key. |
-| Claude Code CLI (optional) | Run `claude` in a terminal; used for `claude mcp list` and headless `claude -p` | `irm https://claude.ai/install.ps1 \| iex` (Windows PowerShell), `curl -fsSL https://claude.ai/install.sh \| bash` (macOS/Linux) |
+| Claude Code CLI (required) | Run `claude` in a terminal; Modules 1 and 2 use `claude` and `claude mcp list`. Check with `claude --version` | `irm https://claude.ai/install.ps1 \| iex` (Windows PowerShell), `curl -fsSL https://claude.ai/install.sh \| bash` (macOS/Linux) |
 | Python 3.10+ | Language | python.org (Windows: tick "Add python.exe to PATH"), then create a venv |
 | Node.js LTS (18+) | Runs the Playwright MCP server via `npx` | nodejs.org |
 | Google Chrome | The browser the MCP server opens | google.com/chrome |
 | Git | Clone, one branch per module | git-scm.com |
 | Python extension for VS Code (optional) | Highlighting, run tests from the editor | Marketplace, "Python" (Microsoft) |
-| Playwright for Python | Test framework | `pip install -r requirements.txt` (pytest, pytest-playwright, pytest-xdist, pytest-repeat), then `playwright install chromium` |
+| Playwright for Python | Test framework | `pip install -r requirements.txt -c constraints.txt` (pytest, pytest-playwright, pytest-xdist, pytest-repeat, at the versions the course was tested with), then `playwright install chromium` |
 | Playwright MCP | Lets Claude drive a browser | Checked into the repo as `.mcp.json`, pinned to `@playwright/mcp@0.0.83` (Windows wraps `npx` in `cmd /c`). Check with `/mcp`. |
 
 Install commands change. Verify against the Claude Code docs before the session.
@@ -41,7 +41,7 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Locator priority: role, label, placeholder/text, then test-id (`data-test`), with CSS last and XPath never
 - Compare `playwright codegen` output to Claude-written tests
 - Prompt pattern: state the user flow, the assertions that prove success, and the constraints (no `sleep`, no brittle selectors)
-- The repo ships two subagents from here on: **test-writer** writes tests, **test-reviewer** reviews them and never edits
+- The repo ships two subagents from here on: **test-writer** writes tests, **test-reviewer** reviews them (it has no editing tools and is told never to edit)
 
 **Exercise:** Check which MCP servers are loaded, and have Claude drive the site and report roles and names. Have the test-writer write a checkout test from a strong prompt and a weak one. Review a passing-but-bad test (`exercises/bad_test.py`) by hand, then with the test-reviewer. Check whether your tests fail for `problem_user`.
 
@@ -79,19 +79,22 @@ Install commands change. Verify against the Claude Code docs before the session.
 - Deny rules in `.claude/settings.json`: block destructive commands, reading secret files and edits to the agents, for every session. A seatbelt, not a sandbox: each rule matches one tool and pattern
 - Metrics: flake rate, time to author a test, review rejection rate
 
-**Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, then build a third agent yourself: a read-only `failure-triager` that returns test bug, app bug or flaky with evidence. Add deny rules and test them in a new session.
+**Exercise:** Calibrate the test-reviewer (it must reject `bad_test.py` and accept a smoke test), run a writer → reviewer loop, and see why "no editing tools" isn't the same as read-only. Optional: build a third agent yourself, a `failure-triager` with no editing tools that returns test bug, app bug or flaky with evidence. Add deny rules and test them in a new session.
 
 The "Fixing failing tests" section (Module 4) and the deny rules (Module 5) are deliberately not on `main`: students build them. The `finished-example` branch has both to compare against.
 
 ## Module 6: Capstone
 **Goals:** Apply Modules 1 to 5 to an app of your own choice.
 
-For a chosen app (not saucedemo), deliver:
-1. A tested `CLAUDE.md` (shown to make a difference, as in Module 3), with a "Fixing failing tests" section
-2. 10 or more UI tests with smoke and regression markers, each passing `--count 10 -n auto`
-3. Two subagents with limited `tools` lists, the reviewer calibrated
-4. Deny rules, tested in a new session
-5. A short writeup of where Claude's output needed correction, what you changed so it didn't recur, and your three metrics
+For a chosen app (not saucedemo), first settle permission to test, secrets handling and baseline permissions, then deliver:
+1. A `CLAUDE.md` compared with and without (as in Module 3), with a "Fixing failing tests" section. "Not much difference, and here's why" is an acceptable result if explained
+2. A coverage map: main user flows, smoke or regression, and the tests that cover each
+3. 10 or more UI tests with smoke and regression markers, each passing `--count 10 -n auto`, and one shown failing for a real reason
+4. Two subagents with tool access you can justify (limited for a reviewer or triager), the reviewer calibrated
+5. Deny rules, tested in a new session, with their gaps named
+6. A short writeup of where Claude's output needed correction, what you changed so it didn't recur, and your three metrics
+
+Module 6 has a rubric: assertions, independence, coverage, evidence, consistency and tool access.
 
 ## Common pitfalls to teach
 - Tests that pass but assert nothing meaningful
@@ -112,16 +115,16 @@ the list under "What the CLAUDE.md must contain". Don't create any other files y
 Read the draft before you accept it, then start a new session so Claude loads it.
 
 ### What the CLAUDE.md must contain
-- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`). Never build two stages at once. The module exercises are written for the cloned repo; the table says which ones work after each stage. Until stage 5, steps that use an agent go to the main session.
+- **How to build:** first ask who writes the tests (Claude writes and the student reviews, or the reverse). Build one stage per module, in order, planning each stage in plan mode. After each stage, stop so the student can run its check and commit it (stage 1 on `main`, then `git switch -c module-N`, each stage branching from the previous one). Never build two stages at once. The module exercises are written for the cloned repo; the table says which ones work after each stage. Until stage 5, steps that use an agent go to the main session.
 - **Stages and checks:**
 
   | Stage | Builds | Check | Exercises that work |
   |---|---|---|---|
-  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest` and the browsing tools by name), venv, `playwright install chromium` | `pytest` runs; `/mcp` shows `playwright` connected | Module 1 (no agents in `/agents` yet) |
+  | 1. Setup | `git init`, `.gitignore`, `requirements.txt`, `pytest.ini` (base_url, chromium, strict `smoke`/`regression` markers), `conftest.py` (`data-test` as the test-id attribute), `.mcp.json` (Playwright MCP pinned to `@playwright/mcp@0.0.83`), `.claude/settings.json` (enable the MCP server, allow `pytest` and the browsing tools by name), venv, `playwright install chromium` | `pytest` starts and reports "no tests ran" (expected: there are no tests yet); `/mcp` shows `playwright` connected | Module 1 (no agents in `/agents` yet) |
   | 2. First tests | A few annotated beginner tests, a `logged_in_page` fixture with a `user_key` override, a passing-but-bad test to review | Tests pass | Module 2, writing and reviewing in the main session, with inline locators |
   | 3. Structure | `data/*.json`, page objects, components, page fixtures, smoke and regression tests | `pytest -n auto` passes | Module 3, Ex 5 in the main session |
   | 4. MCP-driven tests | One feature tested from a description only, explored with MCP first. Then the student writes a "Fixing failing tests" section in `CLAUDE.md`; Claude guides | Passes `--count 10 -n auto`; Claude won't weaken a failing test | Module 4; Ex 1 is the build |
-  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; never edits), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session | Module 5, as written |
+  | 5. Subagents | `.claude/agents/test-writer.md` (all tools) and `test-reviewer.md` (`Read, Grep, Glob, Bash`; no editing tools, told never to edit), both `model: sonnet`. Then the student adds deny rules; Claude guides | The reviewer rejects the bad test and accepts a good one; deny rules refuse in a new session | Module 5, as written |
   | 6. Capstone | Nothing in this project: a new project for the student's own app | See Module 6 | Module 6 |
 
 - **Run commands:** smoke headed, parallel runs (`-n auto`), one test, debugging with traces and screenshots, the 10-run stability check.

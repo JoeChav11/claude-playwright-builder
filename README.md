@@ -21,12 +21,26 @@ No `CLAUDE.md`? Start from [docs/curriculum.md](docs/curriculum.md) instead: its
 
 The general use case is to begin with learning how to interact with Claude Code. Use Claude to build a similar repo to this one with the outlines listed above. You can make it your own! This is meant to be a guide only! Also keep in mind you can choose to allow Claude to build everything, or build alongside the AI with writing manual tests to further your code writing skills. Have fun with it!
 
-Because you extend the repo as you go, your copy will end up different from `main`. That's expected. Work on your own branch for each module, so your exercise changes stay separate from the reference:
+Because you extend the repo as you go, your copy will end up different from `main`. That's expected. Work on your own branch for each module, so your exercise changes stay separate from the reference. Some modules start fresh from the reference; others build on your previous module:
+
+| Module | Start its branch from | Why |
+|---|---|---|
+| 1 | no branch needed | Exercises use a throwaway `scratch/` folder and a separate demo folder |
+| 2 | `main` | Uses the reference as shipped |
+| 3 | `main` | Exercise 4 refactors the original `tests/test_reference.py` |
+| 4 | `main` | Exercise 1 needs the original `Header`, without your Module 3 changes |
+| 5 | your `module-4` branch | Keeps the "Fixing failing tests" section you wrote in Module 4 |
+| 6 | a new repository | The capstone is a new project for your own app |
+
 ```powershell
-git switch -c module-2       # start a module
-git diff main                # see what you changed compared with the reference
-git switch main              # back to the reference version
+git switch main
+git switch -c module-4            # start a module from main...
+git switch -c module-5 module-4   # ...or from your previous module
+git diff main                     # see what you changed compared with the reference
 ```
+Each module's checklist ends with what to clean up, so failing exercise files don't follow you into the next module.
+
+Building from scratch (option 2)? Each stage's branch starts from the previous stage's branch, so your work carries forward.
 
 You will use Claude Code two ways:
 - **Driving the browser live** through the Playwright MCP server (Claude clicks around the site and reads its accessibility tree).
@@ -40,6 +54,8 @@ CLAUDE.md                  Standards Claude follows in this repo (read it!)
 .claude/settings.json      Enables the MCP server, pre-approved commands
 conftest.py                Registers fixtures/, sets data-test as the test-id attribute
 pytest.ini                 base_url, browser, markers (smoke, regression)
+requirements.txt           Packages the project needs
+constraints.txt            Exact versions the course was tested with (pip install ... -c constraints.txt)
 
 tests/smoke/               Critical-path tests                         (Module 3)
 tests/regression/          Edge cases and error handling               (Module 3)
@@ -64,11 +80,12 @@ Do this before the session. Installs can take 20 to 30 minutes on a fresh machin
 |---|---|---|---|---|
 | 1 | **VS Code** | Editor where you run Claude Code and read the tests | https://code.visualstudio.com | |
 | 2 | **Claude Code extension** | The AI agent that writes and reviews tests and drives the browser | In VS Code: Extensions (`Ctrl+Shift+X`), search "Claude Code" (publisher: Anthropic) | Sign in with your Claude account when prompted. You need a paid plan (Pro, Max, Team or Enterprise) or an API key. |
-| 3 | **Python 3.10 or newer** | Runs the Playwright tests (pytest) | https://www.python.org/downloads | **Windows: tick "Add python.exe to PATH"** on the first installer screen. |
-| 4 | **Node.js LTS** (18 or newer) | Runs the Playwright MCP server that lets Claude control the browser | https://nodejs.org | Default installer options are fine. |
-| 5 | **Google Chrome** | The browser the MCP server opens | https://www.google.com/chrome | Tests use their own bundled Chromium, installed in Setup below. |
-| 6 | **Python extension for VS Code** (optional) | Syntax highlighting, and lets you run tests from the editor | Extensions, search "Python" (publisher: Microsoft) | |
-| 7 | **Git** | Get the project with `git clone`, and keep each module on its own branch | https://git-scm.com | |
+| 3 | **Claude Code CLI** (required) | Runs `claude` in a terminal. Modules 1 and 2 use it (`claude`, `claude mcp list`) | Windows PowerShell: `irm https://claude.ai/install.ps1 \| iex`. macOS/Linux: `curl -fsSL https://claude.ai/install.sh \| bash` | Same sign-in as the extension. |
+| 4 | **Python 3.10 or newer** | Runs the Playwright tests (pytest) | https://www.python.org/downloads | **Windows: tick "Add python.exe to PATH"** on the first installer screen. |
+| 5 | **Node.js LTS** (18 or newer) | Runs the Playwright MCP server that lets Claude control the browser | https://nodejs.org | Default installer options are fine. |
+| 6 | **Google Chrome** | The browser the MCP server opens | https://www.google.com/chrome | Tests use their own bundled Chromium, installed in Setup below. |
+| 7 | **Python extension for VS Code** (optional) | Syntax highlighting, and lets you run tests from the editor | Extensions, search "Python" (publisher: Microsoft) | |
+| 8 | **Git** | Get the project with `git clone`, and keep each module on its own branch | https://git-scm.com | |
 
 **Network:** you need access to `pypi.org`, `registry.npmjs.org`, the Playwright browser download servers and `saucedemo.com`. If you're on a corporate VPN or proxy and installs hang, try off-VPN or ask IT.
 
@@ -81,6 +98,8 @@ code --version      # VS Code
 python --version    # 3.10 or newer (macOS/Linux: python3 --version)
 node --version      # v18 or newer
 npx --version       # comes with Node
+claude --version    # Claude Code CLI
+git --version
 ```
 If a command says "not recognized" or "not found", that tool isn't installed or isn't on your PATH. Reinstall it (for Python, with "Add to PATH" ticked) and reopen the terminal.
 
@@ -92,12 +111,24 @@ Clone the repo (`git clone https://github.com/JoeChav11/claude-playwright-builde
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1          # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints.txt   # constraints.txt pins the tested versions
 playwright install chromium
 pytest -n auto                        # 23 tests should pass
 ```
 
-Then open the Claude Code panel in VS Code (with this folder open, so it loads `CLAUDE.md` and `.mcp.json`) and run `/mcp`. You should see `playwright` connected. On macOS/Linux, change `.mcp.json` to `"command": "npx", "args": ["-y", "@playwright/mcp@0.0.83"]`.
+Then open the Claude Code panel in VS Code (with this folder open, so it loads `CLAUDE.md` and `.mcp.json`) and run `/mcp`. You should see `playwright` connected.
+
+#### Windows vs macOS/Linux
+The course is written for Windows PowerShell. On macOS/Linux, change these:
+
+| | Windows (PowerShell) | macOS / Linux |
+|---|---|---|
+| Python command | `python` | `python3` (outside the venv) |
+| Activate the venv | `.\.venv\Scripts\Activate.ps1` | `source .venv/bin/activate` |
+| `.mcp.json` | `"command": "cmd", "args": ["/c", "npx", "-y", "@playwright/mcp@0.0.83"]` (as shipped) | `"command": "npx", "args": ["-y", "@playwright/mcp@0.0.83"]` |
+| Install the CLI | `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
+| Paths in commands | `test-results\<folder>\trace.zip` | `test-results/<folder>/trace.zip` |
+| Delete a file | `Remove-Item <file>` | `rm <file>` |
 
 > Windows: if `Activate.ps1` is blocked, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 > If `python -m venv` fails with "No module named 'encodings'", that Python install is broken. List others with `py -0p` and use one, e.g. `py -3.14 -m venv .venv`.

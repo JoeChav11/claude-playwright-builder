@@ -8,7 +8,7 @@ You will use Claude Code two ways:
 
 Files for this module: `tests/test_reference.py` (annotated examples, start here), `tests/codegen/`, `tests/claude/`, `exercises/bad_test.py`, [playwright-basics.md](../playwright-basics.md), [review-checklist.md](../review-checklist.md).
 
-This repo ships two subagents in `.claude/agents/`: **test-writer** writes tests, **test-reviewer** reviews them and never edits. You use both from this module on; Module 5 looks at how they work.
+This repo ships two subagents in `.claude/agents/`: **test-writer** writes tests, **test-reviewer** reviews them and is told never to edit (it has no editing tools). You use both from this module on; Module 5 looks at how they work.
 
 ## Topics
 | Topic | What to know |
@@ -79,7 +79,7 @@ Use the test-writer agent: write a playwright test for checkout on saucedemo
 ```
 Did it stop and ask what proves success, or did it assume? (Its instructions say to ask. Check that it does.)
 
-> **This isn't a fair fight, and that's the lesson.** Codegen sees only the clicks you made. The test-writer sees the whole repo: `CLAUDE.md`, the page objects, the fixtures and `data/`. So you're not comparing "codegen vs. Claude"; you're comparing **a recorder vs. Claude working inside a repo with standards**. Expect Claude's test to use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. What Claude knows about your repo is most of what makes its output good. Module 3 looks at that structure, and Module 3, Exercise 3 measures how much of it comes from `CLAUDE.md`.
+> **This isn't a fair fight, and that's the lesson.** Codegen sees only the clicks you made. The test-writer sees the whole repo: `CLAUDE.md`, the page objects, the fixtures and `data/`. So you're not comparing "codegen vs. Claude"; you're comparing **a recorder vs. Claude working inside a repo with standards**. Expect Claude's test to use page object fixtures (`inventory_page`, `cart_page`, ...) instead of raw locators. What Claude knows about your repo is most of what makes its output good. Module 3 looks at that structure, and Module 3, Exercise 3 shows how much of it comes from `CLAUDE.md`.
 
 ## Exercise 5: Review, don't accept (15 min)
 1. Read `exercises/bad_test.py` yourself first. Find as many problems as you can using the [review checklist](../review-checklist.md).
@@ -109,3 +109,7 @@ If the weak prompt got a question back instead of a test, write what it asked in
 | Sleeps / hard waits | | | |
 | Fails for `problem_user`? | | | |
 | Would you merge it? | | | |
+
+## Clean up
+- [ ] `exercises/bad_test.py` is back to `standard_user` (`git restore exercises/bad_test.py`)
+- [ ] Your codegen and Claude-written tests are committed on `module-2`

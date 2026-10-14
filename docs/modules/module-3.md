@@ -44,26 +44,34 @@ Questions:
 - Try `pytest -m smoek`. Why does it select nothing silently, while `@pytest.mark.smoek` on a test fails? (Look at `--strict-markers` in `pytest.ini`.)
 - Parallel runs only work because tests are independent. What would break if one test relied on another test's cart?
 
-## Exercise 3: Prove CLAUDE.md is doing the work (20 min)
-Ask Claude for the same test twice, once with the standards and once without. Keep everything else the same, so the only difference is `CLAUDE.md`:
-- **A new session for each run.** CLAUDE.md is read at session start, and a session that has already seen one answer will copy it.
+## Exercise 3: See what CLAUDE.md changes (20 min)
+Ask Claude for the same test twice, in two copies of the same commit: one with `CLAUDE.md`, one without. Keep everything else the same:
+- **Two clean copies.** Run B works in a second copy where `CLAUDE.md` is deleted, not renamed: Claude can find and read a renamed file. Neither run can see the other's output.
+- **A new session for each run.** CLAUDE.md is read at session start.
 - **No subagents.** The test-writer's instructions repeat several CLAUDE.md rules, so they would hide the difference. The prompt says so explicitly, because Claude may otherwise hand the task to the agent on its own.
-- **Run A's test out of the way before Run B.** Otherwise Run B can simply copy it.
 
-**Run A (with CLAUDE.md):** start a new session and send:
+Setup: commit your work, then make the second copy with `git worktree` (a second folder checked out from the same repo):
+```powershell
+git worktree add ../claude-playwright-b HEAD
+Remove-Item ../claude-playwright-b/CLAUDE.md
+```
+
+**Run A (with CLAUDE.md):** in this repo, start a new session and send:
 ```
 Without using any subagent, add a regression test: after sorting by "Price (high to
 low)", adding the first product shown puts the Fleece Jacket in the cart.
 ```
-Then move the test it wrote out of the repo, for example to your desktop.
+**Run B (without):** open `../claude-playwright-b` in a second VS Code window (or `cd` there with this repo's venv still active), start a new session and send the same prompt.
 
-**Run B (without):** rename `CLAUDE.md` to `CLAUDE.md.off`, start a **new** session and send the same prompt. Rename it back afterwards, and put Run A's test back.
+In both sessions, run `/memory` and note which instruction files are loaded. Your own `~/.claude/CLAUDE.md` loads in both, so it affects both runs equally.
 
-Compare: Where did each test go? Did it use page objects and `data/`? Did it get a marker? Any `nth(0)` or `.first`? Then, with `CLAUDE.md` renamed back, run the test-reviewer agent on both files.
+Compare **every** file each run changed (`git status` and `git diff` in each folder), not only the test: did one of them also edit a page object? Where did each test go? Did it use page objects and `data/`? Did it get a marker? Any `nth(0)` or `.first`? Then copy Run B's test into this repo and run the test-reviewer agent on both tests.
 
-Expect Run B to be better than you'd guess. Without `CLAUDE.md`, Claude still reads `pages/`, `fixtures/` and the existing tests, and copies their patterns: **existing code is a standard too**. So ask which differences came from `CLAUDE.md`, and which the code alone would have taught. The rules that only `CLAUDE.md` carries (banned patterns, "run it 10 times", what not to do) are the ones it's worth writing down. In a new project with no code yet, `CLAUDE.md` is the only standard there is (Module 6).
+Clean up: `git worktree remove --force ../claude-playwright-b`.
 
-> Notice the trap in the prompt: "the first product shown" invites `.first`. A good answer uses the page object and asserts by name from `data/products.json`, or asks you whether position is really what you want to test.
+This is one pair of answers: a demonstration, not proof. Run it again and the details will change. Expect Run B to be better than you'd guess. Without `CLAUDE.md`, Claude still reads `pages/`, `fixtures/` and the existing tests, and copies their patterns: **existing code is a standard too**. So ask which differences came from `CLAUDE.md`, and which the code alone would have taught. The rules that only `CLAUDE.md` carries (banned patterns, "run it 10 times", what not to do) are the ones it's worth writing down. In a new project with no code yet, `CLAUDE.md` is the only standard there is (Module 6).
+
+> Notice the trap in the prompt. "The first product shown" is a requirement about **position**, so a test that just picks the Fleece Jacket by name drops half of it: it would pass even if sorting did nothing. A good answer keeps the requirement. It checks the sorted order first (the first card is the most expensive product in `data/products.json`), then adds the first card and checks the cart. Using position is allowed here because position is what's being tested (`CLAUDE.md`'s exception), and the positional lookup belongs in the page object with a comment saying why. Asking you whether position really is the requirement is also a good answer.
 
 ## Exercise 4: Plan mode for a multi-file refactor (20 min)
 Multi-file changes are where Claude is most likely to drift: one file gets the new pattern, another keeps the old one. Plan mode makes Claude propose every change before touching anything.
@@ -118,3 +126,4 @@ Ask Claude to run the whole smoke suite as each broken user and write up which t
 - [ ] Banned patterns are listed with what to do instead
 - [ ] It's clear where new pages, components, fixtures, and data go
 - [ ] It's short. Claude reads CLAUDE.md every session; it costs context each time, so prune rules that never matter.
+- [ ] Clean up: the `../claude-playwright-b` worktree is removed (`git worktree list` shows only this folder), and your work is committed on `module-3`

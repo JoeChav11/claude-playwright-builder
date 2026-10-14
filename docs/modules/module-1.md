@@ -119,3 +119,4 @@ Takeaway: `/init` gives you a starting point from what is in the repo. The team'
 - [ ] You know when to `/clear` and when to `/compact`
 - [ ] You can explain when `CLAUDE.md` is loaded
 - [ ] You never accept a diff you have not read
+- [ ] Clean up: the `scratch/` folder is deleted

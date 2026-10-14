@@ -18,13 +18,18 @@ A_TO_Z = [
 
 
 @pytest.mark.parametrize(
-    ("option", "expected_names"),
+    ("start_option", "option", "expected_names"),
     [
-        pytest.param("Name (A to Z)", A_TO_Z, id="a-to-z"),
-        pytest.param("Name (Z to A)", A_TO_Z[::-1], id="z-to-a"),
+        pytest.param("Name (Z to A)", "Name (A to Z)", A_TO_Z, id="a-to-z"),
+        pytest.param("Name (A to Z)", "Name (Z to A)", A_TO_Z[::-1], id="z-to-a"),
     ],
 )
-def test_name_sort_orders_products_by_name(inventory_page: InventoryPage, option, expected_names):
+def test_name_sort_orders_products_by_name(inventory_page: InventoryPage, start_option, option, expected_names):
+    # The page opens sorted A to Z. Start from the opposite order, so choosing the
+    # option has to change something: otherwise the a-to-z case passes even if sorting is broken.
+    inventory_page.sort_by(start_option)
+    expect(inventory_page.names).to_have_text(expected_names[::-1])
+
     inventory_page.sort_by(option)
 
     # to_have_text with a list checks every item, in order, and retries until it matches.

@@ -5,7 +5,7 @@ Use this on every generated test, whether it came from codegen or Claude.
 ## Locators
 - [ ] Uses `get_by_role` with a `name` wherever the element has a role
 - [ ] Falls back in order: label, placeholder/text, test-id, then CSS as a last resort. No XPath.
-- [ ] No positional selectors (`nth-child`, `.first`, `.nth(0)`) unless position is the thing being tested
+- [ ] No positional selectors (`nth-child`, `.first`, `.nth(0)`) unless position is the thing being tested; then the lookup lives in the page object with a comment saying so
 - [ ] No styling classes (`.btn_medium`) or deep DOM paths (`/div/div[2]/...`)
 - [ ] Repeated elements are scoped (`card.filter(has_text=...).get_by_role(...)`)
 
@@ -22,17 +22,19 @@ Use this on every generated test, whether it came from codegen or Claude.
 ## Structure
 - [ ] One flow per test, descriptive name (`test_locked_out_user_sees_error`)
 - [ ] Uses `page.goto("/")` with `base_url`, no hard-coded host
-- [ ] Shared setup (login) lives in a fixture, not copy-pasted
+- [ ] Shared setup (login) lives in a fixture, not copy-pasted. Exception: tests of login itself log in through `login_page`
 - [ ] Passes when run alone and in any order
 
 ## Repo standards (Module 3)
-- [ ] In `tests/smoke/` or `tests/regression/` with a matching `pytestmark`
-- [ ] No locators in the test file; they live in `pages/` or `pages/components/`
+- [ ] In `tests/smoke/` or `tests/regression/` with a matching `pytestmark` (see the note below)
+- [ ] No locators in the test file; they live in `pages/` or `pages/components/` (see the note below)
 - [ ] No literal usernames, product names, prices or customer details; uses `data/`
 - [ ] Reuses existing page objects, components and fixtures instead of near-duplicates
 - [ ] Page objects contain no assertions
 - [ ] Similar cases use `parametrize` with readable ids, not copy-paste
 - [ ] Safe to run in parallel (`pytest -n auto`)
+
+**Note on training material:** the two items marked "see the note below" don't apply to Module 2 training material (`tests/test_reference.py`, `tests/claude/`, `tests/codegen/`, `exercises/`). It lives outside those folders and may use inline locators. Mention it, but don't reject for it. Every other item applies.
 
 ## The "would it catch a bug?" check
 Ask: if the feature broke, would this test fail? A test that clicks through checkout but never checks the result passes on a broken site.

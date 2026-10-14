@@ -4,6 +4,8 @@
 
 Since Module 2 you've been handing work to two subagents that ship with this repo: **test-writer** and **test-reviewer**. In this module you open them up: what a subagent is, why each one is built the way it is, how to check the reviewer is actually right, how to chain the two, and how to build a third one yourself. Then you set limits for every session, not just the agents (deny rules), and pick the numbers that tell you whether all of this is working.
 
+Start this module from your Module 4 branch (`git switch -c module-5 module-4`), so the "Fixing failing tests" section you wrote in `CLAUDE.md` comes with you.
+
 ## What a subagent is
 A subagent is a separate Claude defined in a Markdown file in `.claude/agents/`. When your main session hands it a task, it:
 - starts with a **fresh context**: it sees its own instructions, `CLAUDE.md`, and the task, not your conversation
@@ -34,8 +36,8 @@ Run `/agents` in a session to list, create and edit subagents. Files in `.claude
 ## Exercise 1: Read the two agents (15 min)
 Open [.claude/agents/test-writer.md](../../.claude/agents/test-writer.md) and [.claude/agents/test-reviewer.md](../../.claude/agents/test-reviewer.md). Answer:
 
-1. **Tools.** The reviewer lists `Read, Grep, Glob, Bash`. The writer has no `tools` line. What can each one do that the other can't? Why must the reviewer not have `Edit` or `Write`? (A reviewer that can edit will "fix" a test until it passes review.)
-2. **Approval.** CLAUDE.md says multi-file changes need your approval first. A subagent can't stop mid-task and ask you. How does the writer handle this instead? (Step 4: it stops and returns a file list. You saw this in Modules 3 and 4.)
+1. **Tools.** The reviewer lists `Read, Grep, Glob, Bash`. The writer has no `tools` line. What can each one do that the other can't? Why must the reviewer not have `Edit` or `Write`? (A reviewer that can edit will "fix" a test until it passes review.) Now look at `Bash`: it's there to run pytest, but a shell can also create, change and delete files. So the reviewer isn't technically read-only. It has **no editing tools and is told not to edit**, which is a strong nudge, not a guarantee. And running pytest runs the code under review on your machine. Would you give it `Bash` on a repo you didn't trust? What would you lose by removing it?
+2. **Approval.** CLAUDE.md says multi-file changes need your approval first. A subagent can't stop mid-task and ask you. How does the writer handle this instead? (Step 4: any change outside the new test file, even one new locator in an existing page object, makes it stop and return a file list. You saw this in Modules 3 and 4.)
 3. **Success criteria.** Which step makes the writer refuse a prompt like "write a test for checkout"? Why is refusing better than guessing?
 4. **Model.** Both agents set `model: sonnet`, so they don't run on the frontier model even if your session does. Which job could a cheaper model handle (`haiku`), and which would suffer? Exercise 2's calibration is how you'd find out.
 5. **Overlap with CLAUDE.md.** Both agents say "follow CLAUDE.md", and the writer repeats some of its rules. What goes wrong if the two drift apart? Which file should own each rule?
@@ -98,11 +100,11 @@ Compare two reviews of the same file:
 
 Which found more problems? The main session already "knows" why every line was written. The subagent sees only the file and its instructions, like a colleague reviewing a PR.
 
-## Exercise 5: Build a third agent (20 min)
-Build a `failure-triager` yourself, using `/agents` to create it (or write the file by hand). Its job: given a failing test, find out why, without changing anything.
+## Exercise 5: Build a third agent (optional, 20 min)
+Optional: do it in class if there's time, or afterwards. Build a `failure-triager` yourself, using `/agents` to create it (or write the file by hand). Its job: given a failing test, find out why, without changing anything.
 
 Decide for yourself, then compare with a neighbour:
-- **Tools.** It needs to run pytest and reproduce the flow in a browser (Playwright MCP), but must not edit files. Which tools does it get?
+- **Tools.** It needs to run pytest and reproduce the flow in a browser (Playwright MCP), but must not edit files. Which tools does it get? If you give it `Bash` for pytest, it has a way to edit again (Exercise 1); say in its instructions what `Bash` is for.
 - **Evidence.** Which evidence should it collect? (Module 4, Exercise 2: failure output, trace, screenshot, browser console.)
 - **Verdict.** What should it return? (Suggested: test bug, app bug, or flaky, with the evidence for it.)
 - **Description.** When should Claude delegate to it without being asked?
@@ -130,6 +132,7 @@ Start a new session and test it: ask Claude to read `.env` (create a dummy one f
 What deny rules do and don't do:
 - Each rule matches one tool and one pattern. `Read(./.env)` stops the Read tool, not a shell command, a Python script or an MCP tool that reads the same file.
 - `Bash(...)` rules match how a command starts. `Bash(rm -rf:*)` blocks `rm -rf build`, but not `rm -r -f build`.
+- `Edit(./.claude/agents/**)` covers Claude's file-editing tools (Edit and Write), but not a shell command that writes to the same file. Same gap as the reviewer's `Bash` in Exercise 1.
 - They are a seatbelt against mistakes, not a sandbox. Anything that must stay secret shouldn't be in a folder Claude works in. Keep it in environment variables or a secrets manager, and keep the permission prompt on for commands you haven't allowed.
 
 Discuss: why deny edits to the agents? (A Claude that can rewrite the reviewer can make it lenient enough to pass its own tests.) You can still edit the agent files yourself; deny rules only bind Claude. What else in this repo should Claude never touch?
@@ -158,10 +161,10 @@ Did Claude use both agents without being told? If not, make the `description` li
 ---
 
 ## Checklist: writer and reviewer
-- [ ] You can explain why the reviewer has no `Edit` or `Write` tool
+- [ ] You can explain why the reviewer has no `Edit` or `Write` tool, and why that still doesn't make it read-only
 - [ ] The reviewer rejects `bad_test.py` and the title-only test, and accepts the smoke tests
 - [ ] Reviewer findings go back to the writer; you don't fix them in the main session
-- [ ] Your `failure-triager` can't edit files and returns a verdict with evidence
+- [ ] (Optional, Exercise 5) Your `failure-triager` has no editing tools and returns a verdict with evidence
 - [ ] Agent files live in `.claude/agents/`, so the whole team uses the same ones
 - [ ] Deny rules block destructive commands, reading secret files and edits to the agents, tested in a new session, and you can name one thing they don't stop
 - [ ] You track flake rate, time to author and review rejection rate

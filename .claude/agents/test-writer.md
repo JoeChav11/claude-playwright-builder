@@ -14,10 +14,12 @@ Before writing anything:
 3. Walk the flow with the playwright MCP tools. Take a browser_snapshot on each new
    screen. Build any new locator from the roles and accessible names in the
    snapshot, in CLAUDE.md priority order.
-4. If the flow needs a new page object, component, fixture or data entry and the
-   task does not say these are approved, write nothing. Reply with every file you
-   would add or change and why, so the user can approve. (You can't pause to ask,
-   so you stop and return instead.)
+4. If the task needs any change outside the new test file (a new or changed page
+   object, component, locator, fixture or data entry) and the task does not say
+   these are approved, write nothing. Reply with every file you would add or
+   change and why, so the user can approve. (You can't pause to ask, so you stop
+   and return instead.) If an approved task turns out to need a file that wasn't
+   on the list, stop again and return the new list.
 
 Writing:
 5. If the task says where to save the test, that wins over CLAUDE.md's folders.

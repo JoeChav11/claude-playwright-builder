@@ -97,14 +97,18 @@ Check roles against the real accessibility tree (Playwright MCP `browser_snapsho
 | Logging in inside a test body | `logged_in_page` / page object fixtures. Exception: tests of login itself (`test_login.py`, `test_login_errors.py`) log in through `login_page` |
 
 ## Fixing failing tests
-- Never change an expected value, remove an `expect`, loosen a matcher
-  (`to_have_text` to `to_contain_text`), add `skip`/`xfail`, add retries or
-  raise a timeout to make a test pass.
 - First decide whether the test or the app is wrong, and say which, with evidence
-  (failure output, trace, screenshot). If the app is wrong, don't edit the test:
-  report the bug.
-- Flaky tests: name the cause (assertion before the page settles, shared state,
-  order-dependent data) and fix it; the fix must pass `pytest <file> --count 10 -n auto`.
+  (failure output, trace, screenshot).
+- If the test is wrong (it expects something the app was never meant to do), fix
+  it and show the evidence that the old expectation was wrong.
+- If the app is wrong, don't edit the test: report the bug. Never change a correct
+  expected value, remove an `expect`, loosen a matcher (`to_have_text` to
+  `to_contain_text`), add `skip`/`xfail`, add retries or raise a timeout to make
+  it pass.
+- Any failure blocks acceptance until it's classified: app bug, test bug, or flaky
+  (fails some runs on unchanged code). Flaky tests: name the cause (assertion
+  before the page settles, shared state, order-dependent data) and fix it; the fix
+  must pass `pytest <file> --count 10 -n auto`, reported as run ("10/10, `-n auto`").
 
 ## Working style
 - **Multi-file changes** (new page object + fixture + tests, renaming a locator used in many places, refactors): use **plan mode** first. List every file you will touch and what changes, and wait for approval.
